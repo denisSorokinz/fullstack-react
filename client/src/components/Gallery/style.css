@@ -1,0 +1,8 @@
+#gallery-swiper .swiper-pagination-bullet {
+  width: 12px;
+  height: 12px;
+}
+
+#gallery-swiper .swiper-pagination-bullet-active {
+  background-color: #fff;
+}
