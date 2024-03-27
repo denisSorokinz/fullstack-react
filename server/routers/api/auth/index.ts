@@ -4,7 +4,7 @@ import z from 'zod';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import PrismaClientSingleton from '../../../prisma/client';
-import { AuthJWTPayload, AuthResponse } from '../../../types/express';
+import { AuthJWTPayload, AuthResponse } from '../../../types/http';
 
 const authRouter = Router();
 

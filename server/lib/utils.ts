@@ -1,28 +1,93 @@
-import { FILTERS } from "../constants";
-import { FILTER_NAMES } from "../types/filters";
+import { FILTERS_INITIAL, FiltersType } from '../constants';
+import { FILTERS_ENUM, ISelectFilter, RANGE_MODIFIERS } from '../types/filters';
+import { AbstractObject } from '../types/utilities';
 
 const decodeHtmlString = (str: string) => str.replaceAll('%5B', '[').replaceAll('%5D', ']');
 
 const queryStringToAppliedFiltersTuple = (queryString: string) => {
-  let filterToValue = [] as [FILTER_NAMES, string][] | [];
+  let filterToValue = [] as [FILTERS_ENUM, string, RANGE_MODIFIERS | null][];
 
   const params = queryString.split('&').map((param) => param.split('='));
   if (params && params.length > 0) {
     filterToValue = params
       .map(([paramName, value]) => {
-        const filterName = Object.keys(FILTERS).find((filterName) => {
-          const typedFilterName = filterName as FILTER_NAMES;
-          const filter = FILTERS[typedFilterName];
+        let tParamName = paramName!;
+        let tValue = value!;
 
-          return filter.slug === paramName;
-        });
+        let rangeModifier = null;
+        if (tParamName.includes('-from')) {
+          rangeModifier = RANGE_MODIFIERS.FROM;
+          tParamName = tParamName.replace('-from', '');
+        }
+        if (tParamName.includes('-to')) {
+          rangeModifier = RANGE_MODIFIERS.TO;
+          tParamName = tParamName.replace('-to', '');
+        }
 
-        return filterName ? [filterName, value] : null;
+        const filterName = Object.keys(FILTERS_INITIAL).find((filterName) => {
+          const typedFilterName = filterName as FILTERS_ENUM;
+          const filter = FILTERS_INITIAL[typedFilterName];
+
+          return filter.slug === tParamName;
+        }) as keyof typeof FILTERS_INITIAL;
+
+        if (!filterName) return null;
+
+        if (FILTERS_INITIAL[filterName].type === 'range') return rangeModifier ? [filterName, +tValue, rangeModifier] : null;
+
+        return [filterName, +tValue, null];
       })
-      .filter(Boolean) as [FILTER_NAMES, string][] | [];
+      .filter(Boolean) as typeof filterToValue;
   }
 
   return filterToValue;
 };
 
-export { decodeHtmlString, queryStringToAppliedFiltersTuple }
+const sanitizeFilters = (filters: FiltersType, appliedFilters: [FILTERS_ENUM, string, RANGE_MODIFIERS | null][]): typeof appliedFilters => {
+  console.log('sanitizeFilters()');
+
+  const sanitized = [...appliedFilters];
+
+  for (let idx in sanitized) {
+    const [filterName] = sanitized[idx]!;
+
+    if (filters[filterName].type === 'range') {
+      const rangeValueIdx = appliedFilters.findIndex(([name, _, rangeModifier]) => name === filterName && rangeModifier !== null);
+
+      if (rangeValueIdx === -1) {
+        sanitized.splice(+idx, 1);
+        return sanitizeFilters(filters, sanitized);
+      }
+    }
+
+    if (filters[filterName].type === 'select' || filters[filterName].type === 'checkbox') {
+      const filter = filters[filterName] as ISelectFilter;
+
+      const parentFilterName = filter._populateFromDb.dependency?.name;
+      if (!parentFilterName) continue;
+
+      const isParentActive = !!appliedFilters.find(([name]) => name === parentFilterName);
+
+      if (!isParentActive) {
+        sanitized.splice(+idx, 1);
+        return sanitizeFilters(filters, sanitized);
+      }
+    }
+  }
+
+  return sanitized;
+};
+
+const sanitizeObject = (obj: { [key: string]: unknown }) => {
+  const res = {} as AbstractObject;
+
+  for (let key in obj) {
+    if (key.startsWith('_')) continue;
+
+    res[key] = typeof obj[key] !== 'object' ? obj[key] : sanitizeObject(obj[key] as AbstractObject);
+  }
+
+  return res;
+};
+
+export { decodeHtmlString, queryStringToAppliedFiltersTuple, sanitizeFilters, sanitizeObject };

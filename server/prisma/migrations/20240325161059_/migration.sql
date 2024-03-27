@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Listing" ALTER COLUMN "mileage" DROP NOT NULL,
+ALTER COLUMN "thumbnailUrl" DROP NOT NULL,
+ALTER COLUMN "description" DROP NOT NULL;

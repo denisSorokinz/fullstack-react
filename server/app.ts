@@ -3,9 +3,12 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
 import dotenv from 'dotenv';
-import riaApiRouter from './routers/api/ria';
-import authRouter from './routers/api/auth';
 dotenv.config();
+
+import riaApiRouter from './routers/api/cars';
+import authRouter from './routers/api/auth';
+import crawlerRouter from './routers/crawler';
+import { validateQuery } from './middlewares';
 
 const PORT = 4001;
 
@@ -15,7 +18,8 @@ app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 
-app.use('/api', riaApiRouter);
+app.use('/api/cars', riaApiRouter);
 app.use('/api/auth', authRouter);
+app.use('/crawler', crawlerRouter);
 
 app.listen(PORT, () => console.log(`listening on port: ${PORT}`));

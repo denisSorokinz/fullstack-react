@@ -24,13 +24,13 @@ interface ISelectFilter extends IFilter {
   options: FilterOption[] | [];
 }
 
-interface INumberFilter extends IFilter {
+interface IRangeFilter extends IFilter {
   type: "number";
   min: number;
   max: number;
 }
 
-type SingleFilterType = ISelectFilter | INumberFilter;
+type SingleFilterType = ISelectFilter | IRangeFilter;
 
 type FiltersType = Record<FILTER_NAMES, SingleFilterType>;
 

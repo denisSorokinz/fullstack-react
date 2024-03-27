@@ -1,15 +1,12 @@
-enum FILTER_NAMES {
-  CATEGORY = "CATEGORY",
-  BRAND = "BRAND",
-  MODEL = "MODEL",
-  REGION = "REGION",
-  CITY = "CITY",
-}
+import { Prisma } from '@prisma/client';
 
-type DependencyType = {
-  filterName: FILTER_NAMES;
-  apiUrl?: string;
-};
+enum FILTERS_ENUM {
+  BRAND = 'BRAND',
+  MODEL = 'MODEL',
+  YEAR = 'YEAR',
+  PRICE = 'PRICE',
+  MILEAGE = 'MILEAGE',
+}
 
 type FilterOption = {
   name: string;
@@ -19,21 +16,35 @@ type FilterOption = {
 interface IFilter {
   slug: string;
   displayName: string;
-  revalidateOnChange: boolean;
-  dependency?: DependencyType;
+  _queries: {
+    [k in Prisma.ModelName]?: {
+      columnName: Prisma.ListingScalarFieldEnum;
+    };
+  };
 }
 
 interface ISelectFilter extends IFilter {
-  type: "select" | "checkbox";
-  options: FilterOption[] | [];
+  type: 'select' | 'checkbox';
+  options: [];
+  _populateFromDb: {
+    model: Prisma.TypeMap['meta']['modelProps'];
+    dependency?: {
+      name: FILTERS_ENUM;
+      dbJoinColumn: 'brandId' | 'modelId'; // DB foreign keys
+    };
+  };
 }
 
-interface INumberFilter extends IFilter {
-  type: "number";
-  min: number;
-  max: number;
+interface IRangeFilter extends IFilter {
+  type: 'range';
+  from: number;
+  to: number;
+}
+enum RANGE_MODIFIERS {
+  FROM = 'FROM',
+  TO = 'TO',
 }
 
-type FilterType = ISelectFilter | INumberFilter;
+type FilterType = ISelectFilter | IRangeFilter;
 
-export { FILTER_NAMES, type FilterOption, type FilterType, ISelectFilter };
+export { FILTERS_ENUM, type FilterOption, type FilterType, ISelectFilter, IRangeFilter, RANGE_MODIFIERS };

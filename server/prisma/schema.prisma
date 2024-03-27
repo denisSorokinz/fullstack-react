@@ -9,14 +9,45 @@ generator client {
 }
 
 model User {
-  id               Int               @id @default(autoincrement())
-  email            String            @unique
-  password         String
-  favoriteListings FavoriteListing[]
+  id              Int               @id @default(autoincrement())
+  email           String            @unique
+  password        String
+  FavoriteListing FavoriteListing[]
 }
 
 model FavoriteListing {
   listingId Int    @id @default(autoincrement())
   slug      String
   likedBy   User   @relation(fields: [listingId], references: [id])
+}
+
+model Brand {
+  id       Int       @id @default(autoincrement())
+  name     String
+  models   Model[]
+  listings Listing[]
+}
+
+model Model {
+  id       Int       @id @default(autoincrement())
+  name     String
+  brand    Brand     @relation(fields: [brandId], references: [id])
+  brandId  Int
+  listings Listing[]
+}
+
+model Listing {
+  id           Int      @id @default(autoincrement())
+  year         Int
+  price        Int
+  mileage      Int?
+  createdAt    DateTime
+  description  String?
+  slug         String   @unique
+  thumbnailUrl String?
+  images       String[]
+  brand        Brand    @relation(fields: [brandId], references: [id])
+  model        Model    @relation(fields: [modelId], references: [id])
+  brandId      Int
+  modelId      Int
 }
