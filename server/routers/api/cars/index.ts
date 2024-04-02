@@ -1,25 +1,27 @@
 import { Router } from 'express';
-import { decodeHtmlString, queryStringToAppliedFiltersTuple, sanitizeFilters, sanitizeObject } from '../../../lib/utils';
+import { decodeHtmlString, deepClone, queryStringToAppliedFiltersTuple, sanitizeFilters, sanitizeObject } from '../../../lib/utils';
 import { FILTERS_INITIAL } from '../../../constants';
 import PrismaClientSingleton from '../../../prisma/client';
-import { Prisma } from '@prisma/client';
-import { RANGE_MODIFIERS } from '../../../types/filters';
+import { Prisma, PrismaClient } from '@prisma/client';
+import { FILTER_NAMES, RANGE_MODIFIERS } from '../../../types/filters';
+import { ApiRequest } from '../../../types/http';
+import { ExcludeLens } from '../../../lib/lenses';
+import { UnwrapPromise } from '@prisma/client/runtime/library';
 
-const prisma = PrismaClientSingleton.getInstance();
+// const prisma = PrismaClientSingleton.getInstance();
+const prisma = new PrismaClient();
 
 const riaApiRouter = Router();
 
+let brands: UnwrapPromise<ReturnType<Prisma.BrandDelegate['findMany']>>;
+let models: UnwrapPromise<ReturnType<Prisma.ModelDelegate['findMany']>>;
+prisma.brand.findMany().then((res) => (brands = res));
+prisma.model.findMany().then((res) => (models = res));
+
 riaApiRouter.get('/filters', async (req, res) => {
-  const { url: requestUrl } = req;
+  const appliedFilters = (req as ApiRequest).filters;
 
-  const queryString = decodeHtmlString(requestUrl.split('?')[1] || '');
-
-  const tuple = queryStringToAppliedFiltersTuple(queryString);
-  const appliedFilters = sanitizeFilters(FILTERS_INITIAL, tuple);
-
-  console.log({ appliedFilters });
-
-  let filters = { ...FILTERS_INITIAL };
+  let filters = deepClone(FILTERS_INITIAL);
 
   for (let filterName in filters) {
     const tFilterName = filterName as keyof typeof filters;
@@ -28,8 +30,11 @@ riaApiRouter.get('/filters', async (req, res) => {
     if (!(filter.type === 'select' || filter.type === 'checkbox') || !filter._populateFromDb) continue;
 
     let query = {};
-    if (filter._populateFromDb.dependency) {
-      const { name: parentFilterName, dbJoinColumn: columnName } = filter._populateFromDb.dependency;
+
+    if (filter.dependency) {
+      const parentFilterName = filter.dependency;
+      const { dbJoinColumn: columnName } = filter._populateFromDb;
+
       const foreignKeyValue = (appliedFilters.find(([name]) => name === parentFilterName) || [])[1];
 
       if (!(columnName && foreignKeyValue)) continue;
@@ -37,7 +42,7 @@ riaApiRouter.get('/filters', async (req, res) => {
       query = { [columnName]: +foreignKeyValue };
     }
 
-    const options = await (prisma[filter._populateFromDb.model] as any).findMany({ where: query });
+    const options = (await (prisma[filter._populateFromDb.model] as any).findMany({ where: query })) as { id: number; name: string }[];
     filter.options = options;
   }
 
@@ -45,12 +50,13 @@ riaApiRouter.get('/filters', async (req, res) => {
 });
 
 riaApiRouter.get('/search', async (req, res) => {
-  const { url: requestUrl } = req;
+  const appliedFilters = (req as ApiRequest).filters;
 
-  const queryString = decodeHtmlString(requestUrl.split('?')[1] || '');
+  let page = Number((req.params as { page?: string }).page) || 0;
+  if (page < 0) page = 0;
 
-  const tuple = queryStringToAppliedFiltersTuple(queryString);
-  const appliedFilters = sanitizeFilters(FILTERS_INITIAL, tuple);
+  let itemsPerPage = Number((req.params as { 'per-page'?: string })['per-page']) || 20;
+  if (itemsPerPage <= 0) itemsPerPage = 20;
 
   const query = {} as Prisma.ListingWhereInput;
   for (let [filterName, value, rangeModifier] of appliedFilters) {
@@ -72,11 +78,19 @@ riaApiRouter.get('/search', async (req, res) => {
     }
   }
 
-  const data = await prisma.listing.findMany({ where: query });
+  const listings = await prisma.listing.findMany({ where: query, take: itemsPerPage, skip: page * itemsPerPage });
 
-  console.log({ query });
+  const listingsUI = listings.map((l) => {
+    const noIds = ExcludeLens.from(['brandId', 'modelId']);
+    const item = noIds.view(l);
 
-  res.status(200).send({ query, data });
+    const { name: brand } = brands.find((brand) => brand.id === l.brandId)!;
+    const { name: model } = models.find((model) => model.id === l.modelId)!;
+
+    return { ...item, brand, model };
+  });
+
+  res.status(200).send({ data: listingsUI });
 });
 
 export default riaApiRouter;

@@ -1,15 +1,15 @@
 enum FILTER_NAMES {
   "BRAND" = "BRAND",
-  "CATEGORY" = "CATEGORY",
-  "CITY" = "CITY",
   "MODEL" = "MODEL",
-  "REGION" = "REGION",
+  "YEAR" = "YEAR",
+  "PRICE" = "PRICE",
+  "MILEAGE" = "MILEAGE",
 }
 
 // ENDPOINTS
 const BASE_API_URL = `${process.env.NEXT_PUBLIC_BASE_URL}/api`;
 const ENDPOINTS = {
-  BASE_API: BASE_API_URL,
+  CARS_API: `${BASE_API_URL}/cars`,
   QUERIES: {
     // [FILTER_NAMES.CATEGORY]: "categories",
     // [FILTER_NAMES.STATE]: "states",
@@ -22,11 +22,11 @@ const ENDPOINTS = {
 
 // Filters query params
 enum FILTER_SLUGS {
-  "categories.main.id" = "categories.main.id",
-  "brand.id[0]" = "brand.id[0]",
-  "model.id[0]" = "model.id[0]",
-  "region.id[0]" = "region.id[0]",
-  "city.id[0]" = "city.id[0]",
+  "brand" = "brand",
+  "model" = "model",
+  "year" = "year",
+  "price" = "price",
+  "mileage" = "mileage",
 }
 
 export { FILTER_NAMES, ENDPOINTS, FILTER_SLUGS };

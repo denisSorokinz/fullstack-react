@@ -1,72 +1,89 @@
 "use client";
 
 import { FC, useState } from "react";
-import { FILTER_NAMES, FilterValuesType, FiltersType } from "@/types/filters";
+import {
+  FILTER_NAMES,
+  FilterValuesType,
+  FiltersType,
+  ISelectFilter,
+} from "@/types/filters";
 import { useRouter } from "next/navigation";
 import SearchForm from "@/components/SearchForm";
 import { decodeHtmlString, sanitizeObject } from "@/lib/utils";
 import { fetchFilters } from "@/lib";
 import { CarListing } from "@/types/listings";
 import CarListingList from "@/components/CarListingList";
+import Range from "@/components/ui/Range";
 
 export type SearchFormValues = {
   [k in FILTER_NAMES]: number | "";
 };
 
 const clearDependencyFilters = (
-  filters: FiltersType,
-  filterValues: FilterValuesType,
+  filterData: FiltersType,
+  filters: FilterValuesType,
   changedFilterName: FILTER_NAMES
 ): FilterValuesType => {
-  const childFilterName = Object.keys(filters).find((filterSlug) => {
-    const typedFilterSlug = filterSlug as keyof typeof filters;
-    return (
-      filters[typedFilterSlug].dependency?.filterName === changedFilterName
-    );
-  }) as keyof typeof filters | undefined;
+  const childFilterName = Object.keys(filterData).find((filterSlug) => {
+    const tFilterSlug = filterSlug as keyof typeof filterData;
 
-  if (!childFilterName) return filterValues;
+    if (
+      !(
+        filterData[tFilterSlug].type === "select" ||
+        filterData[tFilterSlug].type === "range"
+      )
+    ) {
+      return;
+    }
 
-  const childFilter = filters[childFilterName];
+    const tFilter = filterData[tFilterSlug] as ISelectFilter;
+    return tFilter.dependency === changedFilterName;
+  }) as keyof typeof filterData | undefined;
 
-  filterValues[childFilter.slug] = "";
-  return clearDependencyFilters(filters, filterValues, childFilterName);
+  if (!childFilterName) return filters;
+
+  const childFilter = filterData[childFilterName];
+
+  delete filters[childFilter.slug];
+  return clearDependencyFilters(filterData, filters, childFilterName);
 };
 
 const Home: FC<{
-  initialFilters: FiltersType;
-  initialFilterValues: FilterValuesType;
+  initialFilterData: FiltersType;
+  initialFilters: FilterValuesType;
   listings: CarListing[];
-}> = ({ initialFilters, initialFilterValues, listings }) => {
+}> = ({ initialFilterData, initialFilters, listings }) => {
   const router = useRouter();
+  
 
+  const [filterData, setFilterData] = useState(initialFilterData);
   const [filters, setFilters] = useState(initialFilters);
-  const [filterValues, setFilterValues] = useState(initialFilterValues);
 
   const handleFilterChange = async (
     changedFilterName: FILTER_NAMES,
-    value: string
+    value: string | number
   ) => {
-    const { slug: changedFilterSlug } = filters[changedFilterName];
+    const { slug: changedFilterSlug } = filterData[changedFilterName];
     const dirtyFilterValues = {
-      ...filterValues,
+      ...filters,
       [changedFilterSlug]: value,
     } as FilterValuesType;
-    const newFilterValues = clearDependencyFilters(
-      filters,
+    const nextFilters = clearDependencyFilters(
+      filterData,
       dirtyFilterValues,
       changedFilterName
     );
-    const newFilters = await fetchFilters(newFilterValues);
 
-    setFilterValues(newFilterValues);
-    setFilters(newFilters);
+    const nextFilterData = await fetchFilters(nextFilters);
+    console.log({ nextFilterData });
+
+    setFilters(nextFilters);
+    setFilterData(nextFilterData);
   };
 
   const handleSubmit = () => {
-    const activeFilterValues = sanitizeObject(filterValues);
     const queryString = decodeHtmlString(
-      new URLSearchParams(activeFilterValues).toString()
+      new URLSearchParams(filters as any).toString()
     );
 
     router.push(`/?${queryString}`);
@@ -74,12 +91,15 @@ const Home: FC<{
 
   return (
     <>
+      <Range from={0} to={100} />
+
       <SearchForm
+        filterData={filterData}
         filters={filters}
-        filterValues={filterValues}
         onFilterChange={handleFilterChange}
         onSubmit={handleSubmit}
       />
+
       <CarListingList listings={listings} />
     </>
   );

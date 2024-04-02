@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { FILTERS_ENUM, FilterType } from '../types/filters';
+import { FILTER_NAMES, FilterType } from '../types/filters';
 
 const baseUrl = 'https://auto.ria.com/uk';
 const ENDPOINTS = {
@@ -9,7 +9,7 @@ const ENDPOINTS = {
 };
 
 const FILTERS_INITIAL: FiltersType = {
-  [FILTERS_ENUM.BRAND]: {
+  [FILTER_NAMES.BRAND]: {
     slug: 'brand',
     displayName: 'Марка',
     type: 'select',
@@ -23,17 +23,15 @@ const FILTERS_INITIAL: FiltersType = {
       },
     },
   },
-  [FILTERS_ENUM.MODEL]: {
+  [FILTER_NAMES.MODEL]: {
     slug: 'model',
     displayName: 'Модель',
     type: 'select',
     options: [],
+    dependency: FILTER_NAMES.BRAND,
     _populateFromDb: {
       model: 'model',
-      dependency: {
-        name: FILTERS_ENUM.BRAND,
-        dbJoinColumn: 'brandId',
-      },
+      dbJoinColumn: 'brandId',
     },
     _queries: {
       [Prisma.ModelName['Listing']]: {
@@ -41,7 +39,7 @@ const FILTERS_INITIAL: FiltersType = {
       },
     },
   },
-  [FILTERS_ENUM.PRICE]: {
+  [FILTER_NAMES.PRICE]: {
     slug: 'price',
     displayName: 'Ціна',
     type: 'range',
@@ -53,7 +51,7 @@ const FILTERS_INITIAL: FiltersType = {
       },
     },
   },
-  [FILTERS_ENUM.YEAR]: {
+  [FILTER_NAMES.YEAR]: {
     slug: 'year',
     displayName: 'Рік',
     type: 'range',
@@ -65,7 +63,7 @@ const FILTERS_INITIAL: FiltersType = {
       },
     },
   },
-  [FILTERS_ENUM.MILEAGE]: {
+  [FILTER_NAMES.MILEAGE]: {
     slug: 'mileage',
     displayName: 'Пробіг',
     type: 'range',
@@ -79,6 +77,6 @@ const FILTERS_INITIAL: FiltersType = {
   },
 };
 
-export type FiltersType = Record<FILTERS_ENUM, FilterType>;
+export type FiltersType = Record<FILTER_NAMES, FilterType>;
 
 export { baseUrl, ENDPOINTS, FILTERS_INITIAL };

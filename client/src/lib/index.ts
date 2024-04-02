@@ -1,24 +1,38 @@
-import { ENDPOINTS, FILTER_SLUGS } from '../constants';
-import UsedCarQueryResult from '../types/UsedCarQueryResult';
-import UsedCarsQueryResult from '../types/UsedCarsQueryResult';
-import { CarListingExpanded, type CarListing } from '../types/listings';
-import { FilterValuesType, FiltersType } from '../types/filters';
-import { decodeHtmlString, sanitizeObject } from '@/lib/utils';
+import { ENDPOINTS, FILTER_SLUGS } from "../constants";
+import UsedCarQueryResult from "../types/UsedCarQueryResult";
+import UsedCarsQueryResult from "../types/UsedCarsQueryResult";
+import { CarListingExpanded, type CarListing } from "../types/listings";
+import { FilterValuesType, FiltersType } from "../types/filters";
+import { decodeHtmlString, sanitizeObject } from "@/lib/utils";
 
-const fetchRiaApi = async <T = { [key: string]: any }>(endpoint: string, params?: URLSearchParams, requestInit?: RequestInit): Promise<T> => {
-  let url = `${ENDPOINTS.BASE_API}/${endpoint}`;
-  if (params && params.toString().length > 0) url += `?${decodeHtmlString(params.toString())}`;
+const fetchRiaApi = async <T = { [key: string]: any }>(
+  endpoint: string,
+  params?: URLSearchParams,
+  requestInit?: RequestInit
+): Promise<T> => {
+  let url = `${ENDPOINTS.CARS_API}/${endpoint}`;
 
-  const data = await (await fetch(url, requestInit)).json();
+  if (params && params.toString().length > 0)
+    url += `?${decodeHtmlString(params.toString())}`;
+
+  const data = await (
+    await fetch(url, { ...requestInit, cache: "no-cache", next: {
+      revalidate: 0
+    } })
+  ).json();
   return data;
 };
 
 const fetchFilters = async (filterValues: FilterValuesType) => {
   const activeFilterValues = sanitizeObject(filterValues);
 
-  const searchParams = new URLSearchParams(activeFilterValues);
+  const searchParams = new URLSearchParams(activeFilterValues as any);
 
-  const { filters } = await fetchRiaApi<{ filters: FiltersType }>(ENDPOINTS.QUERIES.GET_FILTERS, searchParams, { next: { revalidate: 60000 } });
+  const { filters } = await fetchRiaApi<{ filters: FiltersType }>(
+    ENDPOINTS.QUERIES.GET_FILTERS,
+    searchParams,
+    { next: { revalidate: 60000 } }
+  );
 
   return filters;
 };
@@ -26,21 +40,23 @@ const fetchFilters = async (filterValues: FilterValuesType) => {
 const fetchCarListings = async (filterValues: FilterValuesType) => {
   const activeFilterValues = sanitizeObject(filterValues);
 
-  const searchParams = new URLSearchParams(activeFilterValues);
+  const searchParams = new URLSearchParams(activeFilterValues as any);
 
   const res = await fetchRiaApi<{
-    listings: CarListing[];
+    data: CarListing[];
   }>(ENDPOINTS.QUERIES.GET_CAR_LISTINGS, searchParams, {
     next: { revalidate: 60 },
   });
 
-  return res.listings;
+  return res.data;
 };
 
 const fetchListingDetails = async (id: string) => {
   const { listing } = await fetchRiaApi<{
     listing: CarListingExpanded;
-  }>(`${ENDPOINTS.QUERIES.GET_CAR_LISTING}/${id}`, undefined, { next: { revalidate: 1 } });
+  }>(`${ENDPOINTS.QUERIES.GET_CAR_LISTING}/${id}`, undefined, {
+    next: { revalidate: 1 },
+  });
 
   return listing;
 };

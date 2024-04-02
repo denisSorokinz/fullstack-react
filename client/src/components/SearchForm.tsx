@@ -1,13 +1,14 @@
 "use client";
 
 import React, { FC } from "react";
-import { FILTER_NAMES } from "../constants";
-import { FilterValuesType, FiltersType } from "../types/filters";
+import { FILTER_NAMES } from "@/constants";
+import { FilterValuesType, FiltersType, IRangeFilter, ISelectFilter } from "@/types/filters";
 import { useForm } from "react-hook-form";
+import Range from "./ui/Range";
 
 type SearchFormProps = {
-  filters: FiltersType;
-  filterValues: FilterValuesType;
+  filterData: FiltersType;
+  filters: FilterValuesType;
   onFilterChange: (changedFilterName: FILTER_NAMES, value: string) => void;
   onSubmit: () => void;
 };
@@ -28,9 +29,14 @@ type SearchFormProps = {
 //   return params.toString();
 // };
 
-const SearchForm: FC<SearchFormProps> = ({ filters, filterValues, onFilterChange, onSubmit }) => {
+const SearchForm: FC<SearchFormProps> = ({
+  filterData,
+  filters,
+  onFilterChange,
+  onSubmit,
+}) => {
   const { register, handleSubmit } = useForm({
-    defaultValues: filterValues,
+    defaultValues: filters,
   });
 
   // fetch dependency filters (if any)
@@ -56,31 +62,39 @@ const SearchForm: FC<SearchFormProps> = ({ filters, filterValues, onFilterChange
 
   // const onSubmit: SubmitHandler<typeof defaultValues> = (formValues) => onSubmit(formValuesToQuery(formValues));
   return (
-    <form className="grid gap-x-6 gap-y-4 grid-cols-2 max-w-2xl m-auto mb-12" onSubmit={handleSubmit(onSubmit)}>
-      {Object.keys(filters).map((filterSlug) => {
-        const typedFilterSlug = filterSlug as keyof typeof filters;
-        const f = filters[typedFilterSlug];
+    <form
+      className="m-auto mb-12 grid max-w-2xl grid-cols-2 gap-x-6 gap-y-4"
+      onSubmit={handleSubmit(onSubmit)}
+    >
+      {Object.keys(filterData).map((filterSlug) => {
+        const typedFilterSlug = filterSlug as keyof typeof filterData;
+        const filter = filterData[typedFilterSlug];
         let input;
 
-        switch (f.type) {
+        switch (filter.type) {
           case "select": {
+            const tFilter = filter as ISelectFilter;
             let options;
             let disabled = true;
 
-            if (f.options.length === 0 && !f.dependency) options = <option value="">0 опцiй</option>;
+            if (tFilter.options.length === 0 && !tFilter.dependency)
+              options = <option value="">0 опцiй</option>;
 
-            if (f.options.length === 0 && f.dependency) {
-              const displayName = filters[f.dependency.filterName].displayName;
-              options = <option value="">Спочатку оберiть: {displayName}</option>;
+            if (tFilter.options.length === 0 && tFilter.dependency) {
+              const displayName =
+                filterData[tFilter.dependency].displayName;
+              options = (
+                <option value="">Спочатку оберiть: {displayName}</option>
+              );
             }
 
-            if (f.options.length > 0) {
+            if (tFilter.options.length > 0) {
               disabled = false;
               options = (
                 <>
-                  <option value="">Оберiть {f.displayName}</option>
-                  {f.options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
+                  <option value="">Оберiть {tFilter.displayName}</option>
+                  {tFilter.options.map((opt) => (
+                    <option key={opt.id} value={opt.id}>
                       {opt.name}
                     </option>
                   ))}
@@ -90,15 +104,23 @@ const SearchForm: FC<SearchFormProps> = ({ filters, filterValues, onFilterChange
 
             input = (
               <select
-                id={f.slug}
+                id={filter.slug}
                 disabled={disabled}
-                {...register(f.slug)}
-                onChange={(ev) => onFilterChange(typedFilterSlug, ev.currentTarget.value)}
-                className="text-primary bg-transparent rounded-md border-slate-300/50 border-2"
+                {...register(filter.slug)}
+                onChange={(ev) =>
+                  onFilterChange(typedFilterSlug, ev.currentTarget.value)
+                }
+                className="rounded-md border-2 border-slate-300/50 bg-transparent text-primary"
               >
                 {options}
               </select>
             );
+            break;
+          }
+
+          case "range": {
+            const tFilter = filter as IRangeFilter;
+            input = <Range from={tFilter.from} to={tFilter.to} />
           }
         }
 
@@ -107,16 +129,16 @@ const SearchForm: FC<SearchFormProps> = ({ filters, filterValues, onFilterChange
         // TODO: handle type number
 
         return (
-          <div key={f.slug} className="flex flex-col gap-1">
-            <label htmlFor={f.slug} className="text-primary">
-              {f.displayName}
+          <div key={filter.slug} className="flex flex-col gap-1">
+            <label htmlFor={filter.slug} className="text-primary">
+              {filter.displayName}
             </label>
             {input}
           </div>
         );
       })}
 
-      <button className="col-span-full m-auto px-4 py-2 bg-accent rounded-md text-white hover:brightness-90 transition">
+      <button className="col-span-full m-auto rounded-md bg-accent px-4 py-2 bg-slate-600 text-slate-200 transition hover:brightness-90">
         Пошук
       </button>
     </form>

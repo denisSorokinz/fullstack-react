@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 
-enum FILTERS_ENUM {
+enum FILTER_NAMES {
   BRAND = 'BRAND',
   MODEL = 'MODEL',
   YEAR = 'YEAR',
@@ -9,8 +9,8 @@ enum FILTERS_ENUM {
 }
 
 type FilterOption = {
+  id: number;
   name: string;
-  value: string;
 };
 
 interface IFilter {
@@ -25,13 +25,11 @@ interface IFilter {
 
 interface ISelectFilter extends IFilter {
   type: 'select' | 'checkbox';
-  options: [];
+  options: FilterOption[];
+  dependency?: FILTER_NAMES,
   _populateFromDb: {
     model: Prisma.TypeMap['meta']['modelProps'];
-    dependency?: {
-      name: FILTERS_ENUM;
-      dbJoinColumn: 'brandId' | 'modelId'; // DB foreign keys
-    };
+    dbJoinColumn?: 'brandId' | 'modelId'; // DB foreign keys
   };
 }
 
@@ -47,4 +45,4 @@ enum RANGE_MODIFIERS {
 
 type FilterType = ISelectFilter | IRangeFilter;
 
-export { FILTERS_ENUM, type FilterOption, type FilterType, ISelectFilter, IRangeFilter, RANGE_MODIFIERS };
+export { FILTER_NAMES, type FilterOption, type FilterType, ISelectFilter, IRangeFilter, RANGE_MODIFIERS };

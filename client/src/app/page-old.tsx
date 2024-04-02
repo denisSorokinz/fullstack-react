@@ -73,5 +73,5 @@ export default async function Home({ searchParams }: { searchParams: { [k in FIL
     formValues[filter.name] = value;
   });
 
-  return <HomeContainer searchParams={searchParams} formValues={formValues} initialFilters={filters} />;
+  return <HomeContainer searchParams={searchParams} formValues={formValues} initialFilterData={filters} />;
 }

@@ -1,4 +1,9 @@
 import { type Request } from 'express';
+import { sanitizeFilters } from '../lib/utils';
+
+export type ApiRequest = Request & {
+  filters: ReturnType<typeof sanitizeFilters>;
+};
 
 export type AuthResponse = {
   success: boolean;

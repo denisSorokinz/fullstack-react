@@ -18,7 +18,7 @@ app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 
-app.use('/api/cars', riaApiRouter);
+app.use('/api/cars', validateQuery, riaApiRouter);
 app.use('/api/auth', authRouter);
 app.use('/crawler', crawlerRouter);
 

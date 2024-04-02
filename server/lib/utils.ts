@@ -1,11 +1,11 @@
 import { FILTERS_INITIAL, FiltersType } from '../constants';
-import { FILTERS_ENUM, ISelectFilter, RANGE_MODIFIERS } from '../types/filters';
+import { FILTER_NAMES, ISelectFilter, RANGE_MODIFIERS } from '../types/filters';
 import { AbstractObject } from '../types/utilities';
 
 const decodeHtmlString = (str: string) => str.replaceAll('%5B', '[').replaceAll('%5D', ']');
 
 const queryStringToAppliedFiltersTuple = (queryString: string) => {
-  let filterToValue = [] as [FILTERS_ENUM, string, RANGE_MODIFIERS | null][];
+  let filterToValue = [] as [FILTER_NAMES, number, RANGE_MODIFIERS | null][];
 
   const params = queryString.split('&').map((param) => param.split('='));
   if (params && params.length > 0) {
@@ -25,7 +25,7 @@ const queryStringToAppliedFiltersTuple = (queryString: string) => {
         }
 
         const filterName = Object.keys(FILTERS_INITIAL).find((filterName) => {
-          const typedFilterName = filterName as FILTERS_ENUM;
+          const typedFilterName = filterName as FILTER_NAMES;
           const filter = FILTERS_INITIAL[typedFilterName];
 
           return filter.slug === tParamName;
@@ -43,9 +43,7 @@ const queryStringToAppliedFiltersTuple = (queryString: string) => {
   return filterToValue;
 };
 
-const sanitizeFilters = (filters: FiltersType, appliedFilters: [FILTERS_ENUM, string, RANGE_MODIFIERS | null][]): typeof appliedFilters => {
-  console.log('sanitizeFilters()');
-
+const sanitizeFilters = (filters: FiltersType, appliedFilters: [FILTER_NAMES, number, RANGE_MODIFIERS | null][]): typeof appliedFilters => {
   const sanitized = [...appliedFilters];
 
   for (let idx in sanitized) {
@@ -63,7 +61,7 @@ const sanitizeFilters = (filters: FiltersType, appliedFilters: [FILTERS_ENUM, st
     if (filters[filterName].type === 'select' || filters[filterName].type === 'checkbox') {
       const filter = filters[filterName] as ISelectFilter;
 
-      const parentFilterName = filter._populateFromDb.dependency?.name;
+      const parentFilterName = filter.dependency;
       if (!parentFilterName) continue;
 
       const isParentActive = !!appliedFilters.find(([name]) => name === parentFilterName);
@@ -84,10 +82,14 @@ const sanitizeObject = (obj: { [key: string]: unknown }) => {
   for (let key in obj) {
     if (key.startsWith('_')) continue;
 
-    res[key] = typeof obj[key] !== 'object' ? obj[key] : sanitizeObject(obj[key] as AbstractObject);
+    const isObject = typeof obj[key] === 'object' && !Array.isArray(obj[key]) && obj[key] !== null;
+
+    res[key] = !isObject ? obj[key] : sanitizeObject(obj[key] as AbstractObject);
   }
 
   return res;
 };
 
-export { decodeHtmlString, queryStringToAppliedFiltersTuple, sanitizeFilters, sanitizeObject };
+const deepClone = <T = Object>(obj: T): T => JSON.parse(JSON.stringify(obj));
+
+export { decodeHtmlString, queryStringToAppliedFiltersTuple, sanitizeFilters, sanitizeObject, deepClone };

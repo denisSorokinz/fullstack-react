@@ -1,11 +1,13 @@
 interface ICarListing {
-  id: string;
+  id: number;
+  year: number;
+  price: number;
+  mileage: number;
+  createdAt: Date;
+  slug: string;
+  thumbnailUrl: string;
   brand: string;
   model: string;
-  year: string;
-  priceUsd: string;
-  mileage: string;
-  slug: string;
 }
 
 type CarListing = ICarListing & {
