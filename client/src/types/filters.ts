@@ -1,6 +1,8 @@
 import { FILTER_NAMES, FILTER_SLUGS } from "../constants";
 
-type FilterValuesType = { [k in FILTER_SLUGS]: number };
+type FilterValuesType = { [k in FILTER_SLUGS]?: number } & {
+  [k in string]: number;
+};
 
 type FilterOption = {
   id: number;
@@ -15,7 +17,7 @@ interface IFilter {
 interface ISelectFilter extends IFilter {
   type: "select" | "checkbox";
   options: FilterOption[];
-  dependency?: FILTER_NAMES
+  dependency?: FILTER_NAMES;
 }
 
 interface IRangeFilter extends IFilter {

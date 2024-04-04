@@ -13,43 +13,51 @@ const sanitizeFilters = (
   filterData: FiltersType,
   filters: FilterValuesType
 ) => {
-  const sanitized = { ...filters };
-  Object.keys(sanitized).forEach((filterSlug) => {
-    const key = filterSlug as keyof typeof sanitized;
+  let sanitized = {} as typeof filters;
+  for (let slug in filters) {
+    const tSlug = slug as keyof typeof filters;
+    const slugNoModifier = tSlug.split("-")[0] as keyof typeof sanitized;
 
-    const slugNoModifier = filterSlug.split("-")[0] as keyof typeof sanitized;
+    const isRange = Object.values(filterData).find(
+      (ft) => ft.slug === slugNoModifier && ft.type === "range"
+    );
+
+    if (isRange) {
+      const modifier = Object.values(RANGE_MODIFIERS).find(
+        (r) => r === tSlug.split("-")[1]
+      );
+
+      if (!modifier) continue;
+    }
+
+    sanitized[tSlug] = filters[tSlug];
+  }
+
+  for (let slug in sanitized) {
+    const tSlug = slug as keyof typeof sanitized;
+    const slugNoModifier = slug.split("-")[0] as keyof typeof sanitized;
 
     const filter = Object.values(filterData).find(
       (ft) => ft.slug === slugNoModifier
     ) as SingleFilterType;
 
     if (filter.type === "range") {
-      const hasRangeModifier = Object.values(RANGE_MODIFIERS).some(
-        (modifier) => filterSlug.split("-")[1] === modifier
-      );
-      if (!hasRangeModifier) {
-        delete sanitized[key];
-        return;
-      }
-
       const tFilter = filter as IRangeFilter;
 
       let modifier = RANGE_MODIFIERS.FROM;
-      if (filterSlug.includes(RANGE_MODIFIERS.TO))
-        modifier = RANGE_MODIFIERS.TO;
+      if (slug.includes(RANGE_MODIFIERS.TO)) modifier = RANGE_MODIFIERS.TO;
 
-      const value = sanitized[key];
+      let value = sanitized[tSlug];
       const limit = tFilter[modifier];
 
       if (
         (modifier === RANGE_MODIFIERS.FROM && value < limit) ||
-        (modifier === RANGE_MODIFIERS.TO && value > limit)
+        (modifier === RANGE_MODIFIERS.TO && value! > limit)
       ) {
-        const keys = Object.values(RANGE_MODIFIERS).map(
-          (modifier) => `${slugNoModifier}-${modifier}`
-        );
-        keys.forEach((k) => delete (sanitized as any)[k]);
+        delete sanitized[tSlug];
       }
+
+      continue;
     }
 
     if (filter.type === "select" || filter.type === "checkbox") {
@@ -58,7 +66,7 @@ const sanitizeFilters = (
       );
       if (!isValidOption) delete sanitized[slugNoModifier];
     }
-  });
+  }
 
   return sanitized;
 };
@@ -91,6 +99,8 @@ export default async function Home({
 
   // clear un-existing filter values
   const sanitizedFilters = sanitizeFilters(filterData, filters);
+
+  console.log({ sanitizedFilters });
 
   // render filters
   return (

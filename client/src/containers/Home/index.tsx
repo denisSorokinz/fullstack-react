@@ -81,7 +81,10 @@ const Home: FC<{
     setFilterData(nextFilterData);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (formData: any) => {
+    console.log({ filters, formData });
+    
+
     const queryString = decodeHtmlString(
       new URLSearchParams(filters as any).toString()
     );
@@ -91,8 +94,6 @@ const Home: FC<{
 
   return (
     <>
-      <Range from={0} to={100} />
-
       <SearchForm
         filterData={filterData}
         filters={filters}

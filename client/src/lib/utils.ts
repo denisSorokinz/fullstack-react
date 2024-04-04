@@ -5,7 +5,7 @@ const sanitizeObject = <T>(obj: T): Partial<T> => {
   const newObj = { ...obj };
   let key: keyof typeof newObj;
   for (key in newObj) {
-    if (newObj[key] === "") delete newObj[key];
+    if (newObj[key] === "" || newObj[key] === null) delete newObj[key];
   }
 
   return newObj;
