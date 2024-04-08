@@ -51,6 +51,7 @@ const sanitizeFilters = (
       const limit = tFilter[modifier];
 
       if (
+        typeof value !== 'number' ||
         (modifier === RANGE_MODIFIERS.FROM && value < limit) ||
         (modifier === RANGE_MODIFIERS.TO && value! > limit)
       ) {

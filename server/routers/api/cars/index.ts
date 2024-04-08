@@ -1,12 +1,14 @@
 import { Router } from 'express';
 import { decodeHtmlString, deepClone, queryStringToAppliedFiltersTuple, sanitizeFilters, sanitizeObject } from '../../../lib/utils';
-import { FILTERS_INITIAL } from '../../../constants';
+import { FILTERS_INITIAL, ENDPOINTS } from '../../../constants';
 import PrismaClientSingleton from '../../../prisma/client';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { FILTER_NAMES, RANGE_MODIFIERS } from '../../../types/filters';
 import { ApiRequest } from '../../../types/http';
 import { ExcludeLens } from '../../../lib/lenses';
 import { UnwrapPromise } from '@prisma/client/runtime/library';
+import { fetchDocumentByUrl } from '../../../lib/dom';
+import { mapListingFields } from '../../../lib/listings';
 
 // const prisma = PrismaClientSingleton.getInstance();
 const prisma = new PrismaClient();
@@ -80,6 +82,7 @@ riaApiRouter.get('/search', async (req, res) => {
 
   const listings = await prisma.listing.findMany({ where: query, take: itemsPerPage, skip: page * itemsPerPage });
 
+  // todo: replace w/ mapListingFields() call
   const listingsUI = listings.map((l) => {
     const noIds = ExcludeLens.from(['brandId', 'modelId']);
     const item = noIds.view(l);
@@ -91,6 +94,18 @@ riaApiRouter.get('/search', async (req, res) => {
   });
 
   res.status(200).send({ data: listingsUI });
+});
+
+riaApiRouter.get('/listing/:id', async (req, res) => {
+  const id = Number(req.params.id);
+  if (id === undefined) return res.status(400).send({ success: false, message: 'please provide listing id' });
+
+  const listing = await prisma.listing.findUnique({ where: { id } });
+  if (!listing) return res.status(404).send({ success: false, message: 'listing not found' });
+
+  const mapped = mapListingFields(listing);
+
+  return res.status(200).send({ listing: mapped });
 });
 
 export default riaApiRouter;

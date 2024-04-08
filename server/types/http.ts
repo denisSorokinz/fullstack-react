@@ -1,5 +1,6 @@
 import { type Request } from 'express';
 import { sanitizeFilters } from '../lib/utils';
+import { ZodError } from 'zod';
 
 export type ApiRequest = Request & {
   filters: ReturnType<typeof sanitizeFilters>;
@@ -8,7 +9,8 @@ export type ApiRequest = Request & {
 export type AuthResponse = {
   success: boolean;
   message?: string;
-  data?: any;
+  tokens?: { accessToken: string; refreshToken: string };
+  error?: ZodError;
 };
 
 export type AuthJWTPayload = {

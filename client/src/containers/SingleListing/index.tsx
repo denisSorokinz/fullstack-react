@@ -30,7 +30,7 @@ const SingleListing: FC<Props> = ({ listing }) => {
           {listing.brand} {listing.model} ({listing.year})
         </h1>
         <strong className="block text-xl font-bold text-green-500">
-          ${listing.priceUsd}
+          ${listing.price}
         </strong>
         <div className="flex items-center gap-1">
           <Mileage width={16} height={16} fill="#ababab" />

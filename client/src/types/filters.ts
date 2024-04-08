@@ -1,7 +1,7 @@
 import { FILTER_NAMES, FILTER_SLUGS } from "../constants";
 
-type FilterValuesType = { [k in FILTER_SLUGS]?: number } & {
-  [k in string]: number;
+type FilterValuesType = { [k in FILTER_SLUGS]?: number | "" } & {
+  [k in string]: number | "";
 };
 
 type FilterOption = {

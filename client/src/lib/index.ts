@@ -1,6 +1,4 @@
-import { ENDPOINTS, FILTER_SLUGS } from "../constants";
-import UsedCarQueryResult from "../types/UsedCarQueryResult";
-import UsedCarsQueryResult from "../types/UsedCarsQueryResult";
+import { ENDPOINTS } from "../constants";
 import { CarListingExpanded, type CarListing } from "../types/listings";
 import { FilterValuesType, FiltersType } from "../types/filters";
 import { decodeHtmlString, sanitizeObject } from "@/lib/utils";
@@ -16,9 +14,13 @@ const fetchRiaApi = async <T = { [key: string]: any }>(
     url += `?${decodeHtmlString(params.toString())}`;
 
   const data = await (
-    await fetch(url, { ...requestInit, cache: "no-cache", next: {
-      revalidate: 0
-    } })
+    await fetch(url, {
+      ...requestInit,
+      cache: "no-cache",
+      next: {
+        revalidate: 0,
+      },
+    })
   ).json();
   return data;
 };
@@ -61,35 +63,74 @@ const fetchListingDetails = async (id: string) => {
   return listing;
 };
 
-// const fetchFilterOptions = async (filter: FilterType, parentFilterValue?: number) => {
-//   let url = filter.endpoint;
+const getArmyScore = ({ price, mileage, year }: CarListing) => {
+  // todo: adjust data & remove
+  mileage = mileage * 1000 < 1_000_000 ? mileage * 1000 : mileage;
 
-//   if (filter.dependency !== undefined) {
-//     if (parentFilterValue === undefined) return null;
+  let score = 10;
 
-//     url = url.replace("[id]", parentFilterValue.toString());
-//   }
+  const THRESHOLDS: {
+    [k in keyof CarListing]?: {
+      [k in "exclude" | "bad" | "okay" | "good"]: number;
+    };
+  } = {
+    mileage: {
+      exclude: 500_000,
+      bad: 400_000,
+      okay: 300_000,
+      good: 200_000,
+    },
+    price: {
+      exclude: 20_000,
+      bad: 15_000,
+      okay: 10_000,
+      good: 8_000,
+    },
+    year: {
+      exclude: 1990,
+      bad: 2000,
+      okay: 2010,
+      good: 2009,
+    },
+  };
 
-//   const data = (await fetchRiaApi(url)) as FilterOptionsQueryResult;
-//   return data;
-// };
+  if (price >= THRESHOLDS.price!.exclude) {
+    score -= 10;
+  } else if (price >= THRESHOLDS.price!.bad) {
+    score -= 4;
+  } else if (price >= THRESHOLDS.price!.okay) {
+    score -= 2;
+  } else if (price >= THRESHOLDS.price!.good) {
+    score -= 1;
+  }
 
-// const fetchCarListings = async (params: { [k in FILTER_SLUGS]: string }) => {
-//   const query = new URLSearchParams(params);
-//   const url = `${ENDPOINTS.QUERIES.GET_LISTINGS}?${query}`;
+  if (mileage >= THRESHOLDS.mileage!.exclude) {
+    score -= 10;
+  } else if (mileage >= THRESHOLDS.mileage!.bad) {
+    score -= 4;
+  } else if (mileage >= THRESHOLDS.mileage!.okay) {
+    score -= 2;
+  } else if (mileage >= THRESHOLDS.mileage!.good) {
+    score -= 1;
+  }
 
-//   const listingData = (await fetchRiaApi(url)) as UsedCarsQueryResult;
-//   const listingIDs = listingData.result.search_result.ids;
-//   const listings = await Promise.all(listingIDs.map(async (id) => await fetchCarListing(id)));
+  if (year <= THRESHOLDS.year!.exclude) {
+    score -= 10;
+  } else if (year <= THRESHOLDS.year!.bad) {
+    score -= 4;
+  } else if (year <= THRESHOLDS.year!.good) {
+    score = score;
+  } else if (year >= THRESHOLDS.year!.okay) {
+    score -= 1;
+  }
 
-//   return listings;
-// };
+  return Math.max(score, 0);
+};
 
-// const fetchCarListing = async (listingId: string) => {
-//   const url = `${ENDPOINTS.QUERIES.GET_LISTING}?auto_id=${listingId}`;
-//   const data = (await fetchRiaApi(url)) as UsedCarQueryResult;
-
-//   return data;
-// };
-
-export { fetchRiaApi, fetchFilters, fetchCarListings, fetchListingDetails };
+export {
+  fetchRiaApi,
+  fetchFilters,
+  fetchCarListings,
+  fetchListingDetails,
+  getArmyScore,
+};

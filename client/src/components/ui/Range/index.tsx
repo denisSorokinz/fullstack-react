@@ -1,15 +1,16 @@
 "use client";
 
-import React, { FC, useEffect, useRef, useState } from "react";
+import React, { FC, useEffect, useRef } from "react";
 
 import "./style.scss";
-import { UseFormRegisterReturn, useFormContext } from "react-hook-form";
 import { RANGE_MODIFIERS } from "@/types/filters";
 
 type Props = {
-  slug: string;
+  max: number;
+  min: number;
+  from: number;
   to: number;
-  from?: number;
+  onChange?: (nextValue: number[]) => void;
 };
 
 function fillSlider(
@@ -36,45 +37,19 @@ function fillSlider(
   `;
 }
 
-const Range: FC<Props> = ({ slug, to: max, from: min = 0 }) => {
-  const context = useFormContext();
-  const registerFrom = context?.register(`${slug}-${RANGE_MODIFIERS.FROM}`, {
-    min,
-    max,
-    valueAsNumber: true,
-  });
-  const registerTo = context?.register(`${slug}-${RANGE_MODIFIERS.TO}`, {
-    min,
-    max,
-    valueAsNumber: true,
-  });
-
-  const [from, setFrom] = useState(min);
-  const [to, setTo] = useState(max);
-
+const Range: FC<Props> = ({ max, min, from, to, onChange }) => {
   const controlRangeRef = useRef<HTMLInputElement>(null);
 
   const handleRangeChange = (changed: RANGE_MODIFIERS, nextValue: number) => {
-    let nextFrom = from;
-    let nextTo = to;
+    let nextFrom = changed === RANGE_MODIFIERS.FROM ? nextValue : from;
+    let nextTo = changed === RANGE_MODIFIERS.TO ? nextValue : to;
 
-    if (changed === RANGE_MODIFIERS.FROM) {
-      nextFrom = nextValue;
-      setFrom(nextValue);
-    }
-    if (changed === RANGE_MODIFIERS.TO) {
-      nextTo = nextValue;
-      setTo(nextValue);
-    }
-
-    fillSlider(min, max, nextFrom, nextTo, controlRangeRef);
+    if (onChange) onChange([nextFrom, nextTo]);
   };
 
   useEffect(() => {
-    fillSlider(min, max, min, max, controlRangeRef);
-
-    // setInterval(() => console.log({ values: context?.getValues() }), 3000);
-  }, []);
+    fillSlider(min, max, from, to, controlRangeRef);
+  }, [from, to]);
 
   return (
     <div className="range-container">
@@ -82,34 +57,24 @@ const Range: FC<Props> = ({ slug, to: max, from: min = 0 }) => {
         ({from} - {to})
       </div>
       <input
-        {...registerFrom}
         type="range"
         min={min}
         max={max}
-        defaultValue={min}
+        value={from}
         onChange={(ev) => {
-          registerFrom.onChange(ev);
-
           handleRangeChange(RANGE_MODIFIERS.FROM, +ev.currentTarget.value);
         }}
         className="range-input range-input--from"
       ></input>
       <input
-        {...registerTo}
         type="range"
         min={min}
         max={max}
-        defaultValue={max}
+        value={to}
         onChange={(ev) => {
-          registerTo.onChange(ev);
-
           handleRangeChange(RANGE_MODIFIERS.TO, +ev.currentTarget.value);
         }}
-        ref={(r) => {
-          registerTo.ref(r);
-
-          (controlRangeRef as any).current = r;
-        }}
+        ref={controlRangeRef}
         className="range-input"
       ></input>
     </div>

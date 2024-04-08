@@ -34,18 +34,17 @@ const schema = {
 } as { [k in FILTER_NAMES]: z.ZodOptional<z.ZodNumber> };
 
 // Listings API
-const validateQuery = (req: Request, res: Response, next: NextFunction) => {
+const validateQueryString = (req: Request, res: Response, next: NextFunction) => {
   // parse all query params into object
   const { url: requestUrl } = req;
 
   const queryString = decodeHtmlString(requestUrl.split('?')[1] || '');
 
   console.log(queryString);
-  
 
   // exclude all un-existing values
   const tuple = queryStringToAppliedFiltersTuple(queryString);
-  
+
   const appliedFilters = sanitizeFilters(FILTERS_INITIAL, tuple);
 
   // schema.parse(filters)
@@ -63,6 +62,22 @@ const validateQuery = (req: Request, res: Response, next: NextFunction) => {
   // if !error -> req.filters = filters, next()
 
   next();
+};
+
+const validateAuthRequest = (req: Request, res: Response, next: NextFunction) => {
+  const { email, password } = req.body as { email: string; password: string };
+
+  const schema = z.object({
+    email: z.string().email('Please provide a valid email'),
+    password: z.string().min(4, 'Password must be 4+ characters long'),
+  });
+
+  const parsed = schema.safeParse({ email, password });
+  if (!parsed.success) {
+    return res.status(400).send({ success: false, error: parsed.error } as AuthResponse);
+  }
+
+  return next();
 };
 
 // AUTH
@@ -83,4 +98,4 @@ const validateQuery = (req: Request, res: Response, next: NextFunction) => {
 //   }
 // };
 
-export { validateQuery };
+export { validateQueryString, validateAuthRequest };

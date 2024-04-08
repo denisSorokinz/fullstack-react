@@ -14,10 +14,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-slate-50">
+      <body className="bg-slate-100">
         <Header />
         <Modals />
-        <main className="container mx-auto px-2 pt-8">{children}</main>
+        <main className="container mx-auto px-2 py-8">{children}</main>
       </body>
     </html>
   );
