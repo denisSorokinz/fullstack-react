@@ -2,10 +2,10 @@
 
 import CarListingList from "@/components/carListings/List";
 import SearchForm from "@/components/SearchForm";
-import { FILTER_NAMES, FilterValuesType, FiltersType } from "@/types/filters";
-import { FC, FormEvent, useState } from "react";
+import { FilterValuesType, FiltersType } from "@/types/filters";
+import { FC, useState } from "react";
 import { CarListing } from "@/types/listings";
-import { fetchFilters } from "@/lib";
+import { fetchCarListings } from "@/lib";
 
 type Props = {
   initialFilterData: FiltersType;
@@ -17,39 +17,33 @@ const DashboardContent: FC<Props> = ({
   initialFilters,
   initialListings,
 }) => {
-  const [filterData, setFilterData] = useState(initialFilterData);
-  const [filters, setFilters] = useState(initialFilters);
-
   const [listings, setListings] = useState(initialListings);
 
-  const handleFilterChange = async (
-    nextFilters: FilterValuesType,
-    isDependencyFilter: boolean
-  ) => {
-    setFilters(nextFilters);
-
-    if (isDependencyFilter) {
-      const nextFilterData = await fetchFilters(nextFilters);
-      setFilterData(nextFilterData!);
-    }
+  const handleSubmit = async (filters: Partial<FilterValuesType>) => {
+    const nextListings = await fetchCarListings(filters);
+    setListings(nextListings!);
   };
-  const handleSubmit = (filters: Partial<FilterValuesType>) => {
-    console.log("submitted filters:", { filters });
+  const handleReset = async () => {
+    const nextListings = await fetchCarListings();
+    setListings(nextListings!);
   };
-  const handleReset = () => {};
 
   return (
-    <>
-      <SearchForm
-        initialFilterData={filterData}
-        initialFilters={filters}
-        onFilterChange={handleFilterChange}
-        onSubmit={handleSubmit}
-        onReset={handleReset}
-      />
+    <div className="flex gap-8">
+      <aside className="flex-[1] rounded-md bg-slate-300 p-4 dark:bg-slate-500">
+        <h6 className="text-2xl">dashboard nav</h6>
+      </aside>
+      <div className="flex flex-[4] flex-col justify-between">
+        <SearchForm
+          initialFilterData={initialFilterData}
+          initialFilters={initialFilters}
+          onSubmit={handleSubmit}
+          onReset={handleReset}
+        />
 
-      <CarListingList listings={listings} />
-    </>
+        <CarListingList listings={listings} />
+      </div>
+    </div>
   );
 };
 

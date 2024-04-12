@@ -44,7 +44,7 @@ const fetchFilters = async (filterValues?: FilterValuesType) => {
   return res.data[CarApiOperations.getFilters];
 };
 
-const fetchCarListings = async (filterValues?: FilterValuesType) => {
+const fetchCarListings = async (filterValues?: Partial<FilterValuesType>) => {
   const activeFilterValues = sanitizeObject(filterValues);
 
   const searchParams = new URLSearchParams(activeFilterValues as any);

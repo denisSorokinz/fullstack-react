@@ -18,8 +18,8 @@ import { fetchFilters } from "@/lib";
 type SearchFormProps = {
   initialFilterData: FiltersType;
   initialFilters: FilterValuesType;
-  onSubmit: (formData: Partial<FilterValuesType>) => void;
-  onReset: () => void;
+  onSubmit?: (formData: Partial<FilterValuesType>) => void;
+  onReset?: () => void;
 };
 
 const SearchForm: FC<SearchFormProps> = ({
@@ -88,7 +88,7 @@ const SearchForm: FC<SearchFormProps> = ({
 
     const sanitized = sanitizeObject(filters);
 
-    onSubmit(sanitized);
+    onSubmit && onSubmit(sanitized);
   };
 
   const handleReset = async () => {
@@ -98,7 +98,7 @@ const SearchForm: FC<SearchFormProps> = ({
     setFilterData(defaultFilterData!);
     setFilters(defaultFilters);
 
-    onReset();
+    onReset && onReset();
   };
 
   return (
