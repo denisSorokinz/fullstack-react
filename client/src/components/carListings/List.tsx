@@ -1,8 +1,6 @@
 "use client";
 
 import { FC, useState } from "react";
-import Image from "next/image";
-import UsedCarQueryResult from "@/types/UsedCarQueryResult";
 import CarListing from "@/components/carListings/ListItem";
 import { type CarListing as CarListingType } from "@/types/listings";
 import ViewSwitcher from "./ViewSwitcher";

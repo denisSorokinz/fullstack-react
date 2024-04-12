@@ -1,11 +1,15 @@
+import { UnwrapPromise } from '@prisma/client/runtime/library';
 import jwt from 'jsonwebtoken';
 import { type Request, type Response, type NextFunction } from 'express';
 import { ApiRequest, AuthJWTPayload, AuthResponse, JWTRequest } from '../types/http';
 import { ENDPOINTS, FILTERS_INITIAL } from '../constants';
 import { validateRequest } from 'zod-express-middleware';
-import { z } from 'zod';
+import { ZodAny, ZodNumber, ZodOptional, ZodString, ZodType, z } from 'zod';
 import { FILTER_NAMES, IRangeFilter } from '../types/filters';
 import { decodeHtmlString, queryStringToAppliedFiltersTuple, sanitizeFilters } from '../lib/utils';
+import { Prisma } from '@prisma/client';
+import { ListingType } from '../types/data';
+import { CarApiOperations, CarApiResponse } from '../routers/api/cars';
 
 const validateRange = (filterName: FILTER_NAMES) => {
   const rules = z.coerce
@@ -39,8 +43,6 @@ const validateQueryString = (req: Request, res: Response, next: NextFunction) =>
   const { url: requestUrl } = req;
 
   const queryString = decodeHtmlString(requestUrl.split('?')[1] || '');
-
-  console.log(queryString);
 
   // exclude all un-existing values
   const tuple = queryStringToAppliedFiltersTuple(queryString);
@@ -80,6 +82,63 @@ const validateAuthRequest = (req: Request, res: Response, next: NextFunction) =>
   return next();
 };
 
+const validateEditListingRequest = (req: Request, res: Response, next: NextFunction) => {
+  const params = req.params as { id: string };
+  const id = params.id && Number(params.id);
+
+  if (!id) return res.status(400).send({ success: false, message: 'no id provided' } as CarApiResponse<CarApiOperations.editListing>);
+
+  const nextListing = req.body as Partial<UnwrapPromise<ReturnType<Prisma.ListingDelegate['findUnique']>>>;
+  if (!nextListing) return res.status(400).send({ success: false, message: 'no input provided' } as CarApiResponse<CarApiOperations.editListing>);
+
+  const schema = z.object({
+    brandId: z.number().optional(),
+    modelId: z.number().optional(),
+    description: z.string().optional(),
+    year: validateRange(FILTER_NAMES.YEAR),
+    mileage: validateRange(FILTER_NAMES.MILEAGE),
+    price: validateRange(FILTER_NAMES.PRICE),
+  } as { [k in keyof typeof nextListing]?: ZodNumber | ZodString | ZodOptional<ZodNumber | ZodString> });
+
+  const parsed = schema.safeParse(nextListing);
+  if (!parsed.success) {
+    return res.status(400).send({ success: false, error: parsed.error } as CarApiResponse<CarApiOperations.editListing>);
+  }
+
+  return next();
+};
+
+const validateDeleteListingRequest = (req: Request, res: Response, next: NextFunction) => {
+  const params = req.params as { id: string };
+  const id = params.id && Number(params.id);
+
+  if (!id) return res.status(400).send({ success: false, message: 'no id provided' } as CarApiResponse<CarApiOperations.editListing>);
+
+  const schema = z.number().min(0, 'id is required');
+
+  const parsed = schema.safeParse(id);
+  if (!parsed.success) {
+    return res.status(400).send({ success: false, error: parsed.error } as AuthResponse);
+  }
+
+  return next();
+};
+
+const authGuard = (req: Request, res: Response, next: NextFunction) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+
+  if (!token) return res.status(400).json({ success: false, message: 'no access token provided' } as AuthResponse);
+
+  try {
+    const payload = jwt.verify(token, process.env['JWT_SECRET']!) as AuthJWTPayload;
+    (req as any).user = { ...payload };
+  } catch {
+    return res.status(400).json({ success: false, message: 'invalid access token' } as AuthResponse);
+  }
+
+  return next();
+};
+
 // AUTH
 // const authenticate = (req: JWTRequest, res: Response, next: NextFunction) => {
 //   const accessToken = req.headers['Authorization'] || '';
@@ -98,4 +157,4 @@ const validateAuthRequest = (req: Request, res: Response, next: NextFunction) =>
 //   }
 // };
 
-export { validateQueryString, validateAuthRequest };
+export { validateQueryString, validateAuthRequest, authGuard, validateEditListingRequest, validateDeleteListingRequest };

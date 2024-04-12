@@ -5,7 +5,7 @@ import Auth from "./Auth";
 
 const Header = () => {
   return (
-    <nav className="sticky top-0 z-10 border-gray-200 bg-white shadow-sm dark:bg-gray-900">
+    <nav className="sticky top-0 z-10 border-gray-200 bg-slate-100 shadow-sm dark:bg-slate-800">
       <div className="mx-auto flex max-w-screen-xl flex-wrap items-center justify-between p-4">
         <a href="/" className="flex items-center">
           <Image src="/images/logo.svg" width={64} height={32} alt="Logo" />

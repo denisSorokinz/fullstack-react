@@ -1,4 +1,4 @@
-import { AbstractObject } from "../types/utilities";
+import { AbstractObject } from "@/types/utilities";
 
 class Lens {
   source;

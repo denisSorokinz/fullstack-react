@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { decodeHtmlString, deepClone, queryStringToAppliedFiltersTuple, sanitizeFilters, sanitizeObject } from '../../../lib/utils';
-import { FILTERS_INITIAL, ENDPOINTS } from '../../../constants';
+import { FILTERS_INITIAL, ENDPOINTS, FiltersType } from '../../../constants';
 import PrismaClientSingleton from '../../../prisma/client';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { FILTER_NAMES, RANGE_MODIFIERS } from '../../../types/filters';
@@ -9,16 +9,38 @@ import { ExcludeLens } from '../../../lib/lenses';
 import { UnwrapPromise } from '@prisma/client/runtime/library';
 import { fetchDocumentByUrl } from '../../../lib/dom';
 import { mapListingFields } from '../../../lib/listings';
+import { authGuard, validateDeleteListingRequest, validateEditListingRequest } from '../../../middlewares';
+import { BrandType, ListingType, ModelType } from '../../../types/data';
+import { ZodError } from 'zod';
 
 // const prisma = PrismaClientSingleton.getInstance();
 const prisma = new PrismaClient();
 
 const riaApiRouter = Router();
 
-let brands: UnwrapPromise<ReturnType<Prisma.BrandDelegate['findMany']>>;
-let models: UnwrapPromise<ReturnType<Prisma.ModelDelegate['findMany']>>;
+let brands: BrandType[];
+let models: ModelType[];
 prisma.brand.findMany().then((res) => (brands = res));
 prisma.model.findMany().then((res) => (models = res));
+
+export enum CarApiOperations {
+  getFilters = 'filters',
+  getListing = 'listing',
+  editListing = 'listing',
+  deleteListing = 'listing',
+  getListings = 'listings',
+}
+export type CarApiResponse<T> =
+  | { success: false; message?: string; error?: ZodError }
+  | {
+      success: true;
+      data: {
+        [CarApiOperations.getFilters]?: T extends CarApiOperations.getFilters ? FiltersType : undefined;
+        [CarApiOperations.getListing]?: T extends CarApiOperations.getListing ? ListingType : undefined;
+        [CarApiOperations.editListing]?: T extends CarApiOperations.editListing ? ListingType : undefined;
+        [CarApiOperations.getListings]?: T extends CarApiOperations.getListings ? Array<ListingType> : undefined;
+      };
+    };
 
 riaApiRouter.get('/filters', async (req, res) => {
   const appliedFilters = (req as ApiRequest).filters;
@@ -48,7 +70,7 @@ riaApiRouter.get('/filters', async (req, res) => {
     filter.options = options;
   }
 
-  return res.status(200).json({ filters: sanitizeObject(filters) });
+  return res.status(200).json({ success: true, data: { filters: sanitizeObject(filters) } } as CarApiResponse<CarApiOperations.getFilters>);
 });
 
 riaApiRouter.get('/search', async (req, res) => {
@@ -82,18 +104,9 @@ riaApiRouter.get('/search', async (req, res) => {
 
   const listings = await prisma.listing.findMany({ where: query, take: itemsPerPage, skip: page * itemsPerPage });
 
-  // todo: replace w/ mapListingFields() call
-  const listingsUI = listings.map((l) => {
-    const noIds = ExcludeLens.from(['brandId', 'modelId']);
-    const item = noIds.view(l);
+  const mapped = listings.map(mapListingFields);
 
-    const { name: brand } = brands.find((brand) => brand.id === l.brandId)!;
-    const { name: model } = models.find((model) => model.id === l.modelId)!;
-
-    return { ...item, brand, model };
-  });
-
-  res.status(200).send({ data: listingsUI });
+  res.status(200).json({ success: true, data: { listings: mapped } } as CarApiResponse<CarApiOperations.getListings>);
 });
 
 riaApiRouter.get('/listing/:id', async (req, res) => {
@@ -105,7 +118,38 @@ riaApiRouter.get('/listing/:id', async (req, res) => {
 
   const mapped = mapListingFields(listing);
 
-  return res.status(200).send({ listing: mapped });
+  return res.status(200).send({ success: true, data: { listing: mapped } });
+});
+
+// todo: parse id from req params
+riaApiRouter.put('/listing/:id', authGuard, validateEditListingRequest, async (req, res) => {
+  const params = req.params as { id: string };
+  const id = Number(params.id);
+
+  const nextListing = req.body as Partial<NonNullable<ListingType>>;
+
+  const listingExists = await prisma.listing.findUnique({ where: { id } });
+  if (!listingExists)
+    return res.status(400).send({ success: false, message: 'listing does not exist' } as CarApiResponse<CarApiOperations.editListing>);
+
+  const noIdLens = ExcludeLens.from('id');
+  const updatedProperties = noIdLens.view(nextListing);
+  const updated = await prisma.listing.update({ data: { ...updatedProperties }, where: { id } });
+
+  return res.status(200).send({ success: true, data: { listing: updated } } as CarApiResponse<CarApiOperations.editListing>);
+});
+
+riaApiRouter.delete('/listing/:id', authGuard, validateDeleteListingRequest, async (req, res) => {
+  const params = req.params as { id: string };
+  const id = Number(params.id);
+
+  const listingExists = await prisma.listing.findUnique({ where: { id } });
+  if (!listingExists)
+    return res.status(400).send({ success: false, message: 'listing does not exist' } as CarApiResponse<CarApiOperations.editListing>);
+
+  await prisma.listing.delete({ where: { id } });
+
+  return res.sendStatus(204);
 });
 
 export default riaApiRouter;

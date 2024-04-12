@@ -9,12 +9,14 @@ import {
   ISelectFilter,
   RANGE_MODIFIERS,
 } from "@/types/filters";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import SearchForm from "@/components/SearchForm";
 import { decodeHtmlString, sanitizeObject } from "@/lib/utils";
 import { fetchFilters } from "@/lib";
 import { CarListing } from "@/types/listings";
 import CarListingList from "@/components/carListings/List";
+import { useAuthStore } from "@/stores/auth";
+import { clearDependencyFilters, getDefaultFilters } from "@/lib/filters";
 
 export type SearchFormValues = {
   [k in FILTER_NAMES]: number | "";
@@ -26,71 +28,10 @@ type Props = {
   listings: CarListing[];
 };
 
-const clearDependencyFilters = (
-  filterData: FiltersType,
-  filters: FilterValuesType,
-  changedFilterName: FILTER_NAMES
-): FilterValuesType => {
-  const childFilterName = Object.keys(filterData).find((filterSlug) => {
-    const tFilterSlug = filterSlug as keyof typeof filterData;
-
-    if (
-      !(
-        filterData[tFilterSlug].type === "select" ||
-        filterData[tFilterSlug].type === "range"
-      )
-    ) {
-      return;
-    }
-
-    const tFilter = filterData[tFilterSlug] as ISelectFilter;
-    return tFilter.dependency === changedFilterName;
-  }) as keyof typeof filterData | undefined;
-
-  if (!childFilterName) return filters;
-
-  const childFilter = filterData[childFilterName];
-
-  delete filters[childFilter.slug];
-  return clearDependencyFilters(filterData, filters, childFilterName);
-};
-
-const getDefaultFilters = (
-  initialFilterData: Props["initialFilterData"],
-  initialFilters?: Props["initialFilters"]
-) => {
-  const res = {} as {
-    [k in keyof FilterValuesType]: number | "";
-  };
-
-  for (let name in initialFilterData) {
-    const tName = name as keyof typeof initialFilterData;
-    const filter = initialFilterData[tName];
-
-    if (filter.type === "range") {
-      const tFilter = filter as IRangeFilter;
-
-      const keyFrom = `${tFilter.slug}-${RANGE_MODIFIERS.FROM}`;
-      const keyTo = `${tFilter.slug}-${RANGE_MODIFIERS.TO}`;
-
-      res[keyFrom] =
-        (initialFilters && initialFilters[keyFrom]) ||
-        tFilter[RANGE_MODIFIERS.FROM];
-      res[keyTo] =
-        (initialFilters && initialFilters[keyTo]) ||
-        tFilter[RANGE_MODIFIERS.TO];
-
-      continue;
-    }
-
-    res[filter.slug] = (initialFilters && initialFilters[filter.slug]) || "";
-  }
-
-  return res;
-};
-
 const Home: FC<Props> = ({ initialFilterData, initialFilters, listings }) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const invalidateSession = useAuthStore((state) => state.invalidateSession);
 
   const defaultFilters = useMemo(
     () => getDefaultFilters(initialFilterData, initialFilters),
@@ -101,54 +42,18 @@ const Home: FC<Props> = ({ initialFilterData, initialFilters, listings }) => {
   const [filters, setFilters] = useState(defaultFilters);
 
   const handleFilterChange = async (
-    changedFilterName: FILTER_NAMES,
-    value: number | number[]
+    nextFilters: FilterValuesType,
+    isDependencyFilter: boolean
   ) => {
-    const { slug: changedFilterSlug } = filterData[changedFilterName];
-    const dirtyFilterValues = {
-      ...filters,
-    } as FilterValuesType;
-
-    if (
-      filterData[changedFilterName].type === "range" &&
-      Array.isArray(value)
-    ) {
-      const [nextFrom, nextTo] = value;
-
-      dirtyFilterValues[`${changedFilterSlug}-${RANGE_MODIFIERS.FROM}`] =
-        nextFrom;
-      dirtyFilterValues[`${changedFilterSlug}-${RANGE_MODIFIERS.TO}`] = nextTo;
-    }
-
-    if (
-      filterData[changedFilterName].type !== "range" &&
-      typeof value === "number"
-    ) {
-      dirtyFilterValues[changedFilterSlug] = value;
-    }
-
-    const nextFilters = clearDependencyFilters(
-      filterData,
-      dirtyFilterValues,
-      changedFilterName
-    );
-
-    const isDependencyFilter = !!Object.values(filterData).find(
-      (filter) =>
-        filter.type !== "range" && filter.dependency === changedFilterName
-    );
-
     setFilters(nextFilters);
 
     if (isDependencyFilter) {
       const nextFilterData = await fetchFilters(nextFilters);
-      setFilterData(nextFilterData);
+      setFilterData(nextFilterData!);
     }
   };
 
-  const handleSubmit = (ev: FormEvent) => {
-    ev.preventDefault();
-
+  const handleSubmit = (filters: Partial<FilterValuesType>) => {
     const sanitized = sanitizeObject(filters);
 
     const queryString = decodeHtmlString(
@@ -158,12 +63,20 @@ const Home: FC<Props> = ({ initialFilterData, initialFilters, listings }) => {
     router.push(`/?${queryString}`);
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     router.push(`/`);
 
+    const defaultFilterData = await fetchFilters();
     const defaultFilters = getDefaultFilters(initialFilterData);
+
+    setFilterData(defaultFilterData!);
     setFilters(defaultFilters);
   };
+
+  useEffect(
+    () => void (searchParams.get("auth") === "logout" && invalidateSession()),
+    [searchParams]
+  );
 
   return (
     <>

@@ -1,5 +1,7 @@
 interface ICarListing {
   id: number;
+  brandId: number;
+  modelId: number;
   year: number;
   price: number;
   mileage: number;

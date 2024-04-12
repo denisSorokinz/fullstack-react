@@ -4,6 +4,7 @@ import { ZodError } from 'zod';
 
 export type ApiRequest = Request & {
   filters: ReturnType<typeof sanitizeFilters>;
+  user?: AuthJWTPayload
 };
 
 export type AuthResponse = {

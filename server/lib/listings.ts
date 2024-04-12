@@ -4,13 +4,10 @@ import { ExcludeLens } from './lenses';
 import { brands, models } from '../constants/crawler';
 
 const mapListingFields = (listing: NonNullable<UnwrapPromise<ReturnType<Prisma.ListingDelegate['findUnique']>>>) => {
-  const noIds = ExcludeLens.from(['brandId', 'modelId']);
-  const item = noIds.view(listing);
-
   const { name: brand } = brands.find((brand) => brand.id === listing.brandId)!;
   const { name: model } = models.find((model) => model.id === listing.modelId)!;
 
-  return { ...item, brand, model };
+  return { ...listing, brand, model };
 };
 
 export { mapListingFields };

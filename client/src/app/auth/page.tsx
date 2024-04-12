@@ -3,34 +3,31 @@
 import AuthForm, { AuthFormData } from "@/components/AuthForm";
 import { AUTH_OPERATIONS } from "@/constants";
 import { authenticate } from "@/lib/actions";
+import { useAuthStore } from "@/stores/auth";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function AuthPage() {
   const router = useRouter();
 
-  const onSubmit = async (formData: AuthFormData, mode: AUTH_OPERATIONS) => {
-    console.log({ authFormData: formData });
+  const login = useAuthStore((store) => store.setUser);
 
+  const onSubmit = async (formData: AuthFormData, mode: AUTH_OPERATIONS) => {
+    console.log('[onSubmit]');
+    
     const res = await authenticate({ type: mode, ...formData });
-    console.log({ res });
 
     if (!res.success) {
+      // todo: show error toast
       return;
     }
 
-    // router.push("/");
-    console.log(`${mode} success`);
+    console.log('[before-login]');
+    
+    login(res.user);
 
-    // res = serverAction({ actionType: mode, ...formData })
-
-    /*
-    if(!res.success)
-      todo: handle errors
-      return;
-
-    router.push('/')
-    toast.message(`${mode} success`)
-    */
+    // router.push("/")
+    // toast.success('Authentication success')
   };
 
   const heading = (

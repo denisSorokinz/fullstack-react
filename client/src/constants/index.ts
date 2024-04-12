@@ -10,6 +10,8 @@ enum FILTER_NAMES {
 enum AUTH_OPERATIONS {
   'LOGIN' = 'login',
   'SIGN_UP' = 'signup',
+  'LOGOUT' = 'logout',
+  'REFRESH_TOKEN' = 'refreshToken'
 }
 
 // Filters query params
@@ -22,7 +24,8 @@ enum FILTER_SLUGS {
 }
 
 // ENDPOINTS
-const BASE_API_URL = `${process.env.NEXT_PUBLIC_BASE_URL}/api`;
+const NEXT_BASE_URL = `${process.env.NEXT_PUBLIC_BASE_URL}/api`;
+const BASE_API_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 const ENDPOINTS = {
   CARS_API: `${BASE_API_URL}/cars`,
   QUERIES: {
@@ -34,8 +37,10 @@ const ENDPOINTS = {
     GET_CAR_LISTING: "listing",
   },
   AUTH: {
+    NEXT_BASE_AUTH: `${NEXT_BASE_URL}/auth`,
     [AUTH_OPERATIONS.LOGIN]: `${BASE_API_URL}/auth/login`,
     [AUTH_OPERATIONS.SIGN_UP]: `${BASE_API_URL}/auth/signup`,
+    [AUTH_OPERATIONS.REFRESH_TOKEN]: `${BASE_API_URL}/auth/refreshAccessToken`,
   }
 };
 

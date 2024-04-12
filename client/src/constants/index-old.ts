@@ -10,7 +10,7 @@ enum FILTER_NAMES {
 }
 
 // ENDPOINTS
-const BASE_API = `${process.env.NEXT_PUBLIC_BASE_URL}/api/ria`;
+const BASE_API = `${process.env.NEXT_PUBLIC_API_URL}/api/ria`;
 const ENDPOINTS = {
   BASE_API,
   QUERIES: {

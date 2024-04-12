@@ -2,18 +2,19 @@ import { ENDPOINTS } from "../constants";
 import { CarListingExpanded, type CarListing } from "../types/listings";
 import { FilterValuesType, FiltersType } from "../types/filters";
 import { decodeHtmlString, sanitizeObject } from "@/lib/utils";
+import { CarApiOperations, CarApiResponse } from "@/types/http";
 
-const fetchRiaApi = async <T = { [key: string]: any }>(
+const fetchRiaApi = async <T>(
   endpoint: string,
   params?: URLSearchParams,
   requestInit?: RequestInit
-): Promise<T> => {
+): Promise<CarApiResponse<T>> => {
   let url = `${ENDPOINTS.CARS_API}/${endpoint}`;
 
   if (params && params.toString().length > 0)
     url += `?${decodeHtmlString(params.toString())}`;
 
-  const data = await (
+  const data = (await (
     await fetch(url, {
       ...requestInit,
       cache: "no-cache",
@@ -21,46 +22,56 @@ const fetchRiaApi = async <T = { [key: string]: any }>(
         revalidate: 0,
       },
     })
-  ).json();
+  ).json()) as CarApiResponse<T>;
+
   return data;
 };
 
-const fetchFilters = async (filterValues: FilterValuesType) => {
+const fetchFilters = async (filterValues?: FilterValuesType) => {
   const activeFilterValues = sanitizeObject(filterValues);
 
   const searchParams = new URLSearchParams(activeFilterValues as any);
 
-  const { filters } = await fetchRiaApi<{ filters: FiltersType }>(
+  const res = await fetchRiaApi<CarApiOperations.getFilters>(
     ENDPOINTS.QUERIES.GET_FILTERS,
     searchParams,
-    { next: { revalidate: 60000 } }
+    {
+      next: { revalidate: 60000 },
+    }
   );
+  if (!res.success) return null;
 
-  return filters;
+  return res.data[CarApiOperations.getFilters];
 };
 
-const fetchCarListings = async (filterValues: FilterValuesType) => {
+const fetchCarListings = async (filterValues?: FilterValuesType) => {
   const activeFilterValues = sanitizeObject(filterValues);
 
   const searchParams = new URLSearchParams(activeFilterValues as any);
 
-  const res = await fetchRiaApi<{
-    data: CarListing[];
-  }>(ENDPOINTS.QUERIES.GET_CAR_LISTINGS, searchParams, {
-    next: { revalidate: 60 },
-  });
+  const res = await fetchRiaApi<CarApiOperations.getListings>(
+    ENDPOINTS.QUERIES.GET_CAR_LISTINGS,
+    searchParams,
+    {
+      next: { revalidate: 60 },
+    }
+  );
+  if (!res.success) return null;
 
-  return res.data;
+  return res.data[CarApiOperations.getListings];
 };
 
 const fetchListingDetails = async (id: string) => {
-  const { listing } = await fetchRiaApi<{
-    listing: CarListingExpanded;
-  }>(`${ENDPOINTS.QUERIES.GET_CAR_LISTING}/${id}`, undefined, {
-    next: { revalidate: 1 },
-  });
+  const res = await fetchRiaApi<CarApiOperations.getListing>(
+    `${ENDPOINTS.QUERIES.GET_CAR_LISTING}/${id}`,
+    undefined,
+    {
+      next: { revalidate: 1 },
+    }
+  );
+  if (!res.success) return null;
 
-  return listing;
+  return res.data[CarApiOperations.getListing];
 };
 
 const getArmyScore = ({ price, mileage, year }: CarListing) => {

@@ -40,6 +40,11 @@ const AuthForm: FC<Props> = ({ onSubmit, heading, footer }) => {
     handleSubmit,
     formState: { errors },
   } = useForm<AuthFormData>({
+    defaultValues: {
+      email: "test15@gmail.com",
+      password: "1234",
+      confirmPassword: "1234",
+    },
     resolver: zodResolver(validationSchema),
   });
 

@@ -11,8 +11,8 @@ const authRouter = Router();
 
 const prisma = PrismaClientSingleton.getInstance();
 
-const ACCESS_TOKEN_EXPIRY = '5m';
-const REFRESH_TOKEN_EXPIRY = '10m';
+const ACCESS_TOKEN_EXPIRY = '1h';
+const REFRESH_TOKEN_EXPIRY = '10h';
 
 authRouter.post('/signup', validateAuthRequest, async (req, res) => {
   const { email, password } = req.body;
@@ -52,9 +52,7 @@ authRouter.post('/login', validateAuthRequest, async (req, res) => {
 });
 
 authRouter.post('/refreshAccessToken', (req, res) => {
-  console.log({ cookies: req.cookies });
-
-  const refreshToken = req.cookies['refreshToken'];
+  const { refreshToken } = req.body;
 
   if (!refreshToken) return res.status(401).send({ success: false, message: 'Access denied. No refresh token provided.' } as AuthResponse);
 
@@ -62,7 +60,7 @@ authRouter.post('/refreshAccessToken', (req, res) => {
     const decoded = jwt.verify(refreshToken, process.env['JWT_SECRET']!) as AuthJWTPayload;
     const accessToken = jwt.sign({ id: decoded.id, email: decoded.email }, process.env['JWT_SECRET']!, { expiresIn: ACCESS_TOKEN_EXPIRY });
 
-    return res.header('Authorization', `Bearer ${accessToken}`).sendStatus(200);
+    return res.status(200).send({ success: true, tokens: { accessToken, refreshToken } } as AuthResponse);
   } catch {
     return res.status(400).send({ success: false, message: 'Invalid refresh token' } as AuthResponse);
   }

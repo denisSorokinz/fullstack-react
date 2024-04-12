@@ -1,7 +1,10 @@
 import { create } from "zustand";
+import { persist, devtools } from "zustand/middleware";
+import { decode } from "jsonwebtoken";
+import { AuthJWTPayload } from "@/types/http";
+import { ViewPropertiesLens } from "@/lib/lenses";
 
 type State = {
-  accessToken: string | null;
   user: {
     id: number;
     email: string;
@@ -9,13 +12,28 @@ type State = {
 };
 
 type Actions = {
-  updateAccessToken: (nextToken: State["accessToken"]) => void;
+  setUser: (user: NonNullable<State["user"]>) => void;
+  invalidateSession: () => void;
 };
 
-const useAuthStore = create<State & Actions>()((set) => ({
-  accessToken: null,
-  user: null,
-  updateAccessToken: (nextToken) => set({ accessToken: nextToken }),
-}));
+const useAuthStore = create(
+  persist<State & Actions>(
+    (set) => ({
+      user: null,
+      setUser: (user) => set({ user }),
+      invalidateSession: () => set({ user: null }),
+    }),
+    { name: "auth-storage" }
+  )
+);
 
-export { useAuthStore };
+// const useAuthStore = create<State & Actions>((set) => ({
+//   user: null,
+//   login: (user) => {
+//     console.log("[login]");
+//     set({ user });
+//   },
+//   logout: () => set({ user: null }),
+// }));
+
+export { useAuthStore, type State as AuthStoreState };

@@ -1,41 +1,52 @@
-import { cookies } from "next/headers";
-import { decode } from "jsonwebtoken";
-import { AuthJWTPayload, AuthResponse } from "@/types/http";
+import { AuthResponse } from "@/types/http";
 import { AUTH_OPERATIONS, ENDPOINTS } from "@/constants";
+import { cookies } from "next/headers";
+
+const requestInit: RequestInit = {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  cache: "no-cache",
+};
+
+export async function GET(request: Request) {
+  console.log({ testCookie: cookies().get("accessToken")?.value });
+
+  return new Response("ok");
+}
 
 export async function POST(request: Request) {
-  const { type, email, password } = (await request.json()) as {
+  const { type, email, password, refreshToken } = (await request.json()) as {
     type: AUTH_OPERATIONS;
-    email: string;
-    password: string;
+    email?: string;
+    password?: string;
+    refreshToken?: string;
   };
 
+  const isSupportedOperation = Object.values(AUTH_OPERATIONS).includes(type);
+  if (!isSupportedOperation || type === AUTH_OPERATIONS.LOGOUT)
+    return Response.json(
+      { success: false, message: "invalid operation type" },
+      { status: 400 }
+    );
+
+  let requestBody = {};
+  if (type === AUTH_OPERATIONS.LOGIN || type === AUTH_OPERATIONS.SIGN_UP)
+    requestBody = { email, password };
+  if (type === AUTH_OPERATIONS.REFRESH_TOKEN) requestBody = { refreshToken };
+
   const endpoint = ENDPOINTS.AUTH[type];
-  console.log({ apiRouteEndPoint: endpoint });
 
   const res = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    ...requestInit,
+    body: JSON.stringify(requestBody),
   });
-  const data = (await res.json()) as AuthResponse;
 
-  // if (data.success) {
-  //   const payload = decode(data.tokens.refreshToken) as AuthJWTPayload;
-  //   cookies().set("refreshToken", data.tokens.refreshToken, {
-  //     httpOnly: true,
-  //     sameSite: true,
-  //     expires: payload.exp * 1000,
-  //   });
-  // }
+  const data = (await res.json()) as AuthResponse;
 
   return Response.json(
     { ...data },
     {
       status: res.status,
-      headers: {
-        Authorization: data.success ? `Bearer ${data.tokens.accessToken}` : ``,
-      },
     }
   );
 }
