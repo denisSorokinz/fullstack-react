@@ -1,6 +1,6 @@
 "use client";
 
-import React, { FC, FormEvent, useEffect, useMemo } from "react";
+import React, { FC, FormEvent, useEffect, useMemo, useState } from "react";
 import { FILTER_NAMES } from "@/constants";
 import {
   FilterValuesType,
@@ -11,30 +11,33 @@ import {
 } from "@/types/filters";
 import Range from "@/components/ui/Range";
 import FormFilters from "./FormFilters";
-import { clearDependencyFilters } from "@/lib/filters";
+import { clearDependencyFilters, getDefaultFilters } from "@/lib/filters";
 import { sanitizeObject } from "@/lib/utils";
+import { fetchFilters } from "@/lib";
 
 type SearchFormProps = {
-  filterData: FiltersType;
-  filters: FilterValuesType;
-  onFilterChange: (
-    nextFilters: FilterValuesType,
-    isDependencyFilter: boolean
-  ) => void;
+  initialFilterData: FiltersType;
+  initialFilters: FilterValuesType;
   onSubmit: (formData: Partial<FilterValuesType>) => void;
   onReset: () => void;
 };
 
 const SearchForm: FC<SearchFormProps> = ({
-  filterData,
-  filters,
-  onFilterChange,
+  initialFilterData,
+  initialFilters,
   onSubmit,
   onReset,
 }) => {
-  useEffect(() => console.log({ formFilters: filters }), [filters]);
+  const defaultFilters = useMemo(
+    () => getDefaultFilters(initialFilterData, initialFilters),
+    [initialFilterData, initialFilters]
+  );
 
-  const handleFilterChange = (
+  const [filterData, setFilterData] = useState(initialFilterData);
+  const [filters, setFilters] = useState(defaultFilters);
+
+
+  const handleFilterChange = async (
     changedFilterName: FILTER_NAMES,
     value: number | number[]
   ) => {
@@ -72,7 +75,12 @@ const SearchForm: FC<SearchFormProps> = ({
         filter.type !== "range" && filter.dependency === changedFilterName
     );
 
-    onFilterChange(nextFilters, isDependencyFilter);
+    setFilters(nextFilters);
+
+    if (isDependencyFilter) {
+      const nextFilterData = await fetchFilters(nextFilters);
+      setFilterData(nextFilterData!);
+    }
   };
 
   const handleSubmit = (ev: FormEvent) => {
@@ -81,6 +89,16 @@ const SearchForm: FC<SearchFormProps> = ({
     const sanitized = sanitizeObject(filters);
 
     onSubmit(sanitized);
+  };
+
+  const handleReset = async () => {
+    const defaultFilterData = await fetchFilters();
+    const defaultFilters = getDefaultFilters(initialFilterData);
+
+    setFilterData(defaultFilterData!);
+    setFilters(defaultFilters);
+
+    onReset();
   };
 
   return (
@@ -100,7 +118,7 @@ const SearchForm: FC<SearchFormProps> = ({
       >
         Пошук
       </button>
-      <button onClick={onReset} type="button">
+      <button onClick={handleReset} type="button">
         Очистити фільтри
       </button>
     </form>

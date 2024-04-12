@@ -41,8 +41,8 @@ const DashboardContent: FC<Props> = ({
   return (
     <>
       <SearchForm
-        filterData={filterData}
-        filters={filters}
+        initialFilterData={filterData}
+        initialFilters={filters}
         onFilterChange={handleFilterChange}
         onSubmit={handleSubmit}
         onReset={handleReset}

@@ -33,26 +33,6 @@ const Home: FC<Props> = ({ initialFilterData, initialFilters, listings }) => {
   const searchParams = useSearchParams();
   const invalidateSession = useAuthStore((state) => state.invalidateSession);
 
-  const defaultFilters = useMemo(
-    () => getDefaultFilters(initialFilterData, initialFilters),
-    [initialFilterData, initialFilters]
-  );
-
-  const [filterData, setFilterData] = useState(initialFilterData);
-  const [filters, setFilters] = useState(defaultFilters);
-
-  const handleFilterChange = async (
-    nextFilters: FilterValuesType,
-    isDependencyFilter: boolean
-  ) => {
-    setFilters(nextFilters);
-
-    if (isDependencyFilter) {
-      const nextFilterData = await fetchFilters(nextFilters);
-      setFilterData(nextFilterData!);
-    }
-  };
-
   const handleSubmit = (filters: Partial<FilterValuesType>) => {
     const sanitized = sanitizeObject(filters);
 
@@ -65,12 +45,6 @@ const Home: FC<Props> = ({ initialFilterData, initialFilters, listings }) => {
 
   const handleReset = async () => {
     router.push(`/`);
-
-    const defaultFilterData = await fetchFilters();
-    const defaultFilters = getDefaultFilters(initialFilterData);
-
-    setFilterData(defaultFilterData!);
-    setFilters(defaultFilters);
   };
 
   useEffect(
@@ -81,9 +55,8 @@ const Home: FC<Props> = ({ initialFilterData, initialFilters, listings }) => {
   return (
     <>
       <SearchForm
-        filterData={filterData}
-        filters={filters}
-        onFilterChange={handleFilterChange}
+        initialFilterData={initialFilterData}
+        initialFilters={initialFilters}
         onSubmit={handleSubmit}
         onReset={handleReset}
       />
