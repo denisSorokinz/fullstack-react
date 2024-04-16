@@ -1,6 +1,6 @@
 "use client";
 
-import AuthForm, { AuthFormData } from "@/components/AuthForm";
+import AuthForm, { AuthFormData } from "@/components/forms/AuthForm";
 import { AUTH_OPERATIONS } from "@/constants";
 import { authenticate } from "@/lib/actions";
 import { useAuthStore } from "@/stores/auth";

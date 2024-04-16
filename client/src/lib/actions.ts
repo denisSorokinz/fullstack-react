@@ -1,6 +1,6 @@
 "use server";
 
-import { AuthFormData } from "@/components/AuthForm";
+import { AuthFormData } from "@/components/forms/AuthForm";
 import { AUTH_OPERATIONS, ENDPOINTS } from "@/constants";
 import { AuthJWTPayload, AuthResponse } from "@/types/http";
 import { decode, verify } from "jsonwebtoken";

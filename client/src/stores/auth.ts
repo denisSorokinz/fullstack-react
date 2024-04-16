@@ -2,7 +2,6 @@ import { create } from "zustand";
 import { persist, devtools } from "zustand/middleware";
 import { decode } from "jsonwebtoken";
 import { AuthJWTPayload } from "@/types/http";
-import { ViewPropertiesLens } from "@/lib/lenses";
 
 type State = {
   user: {

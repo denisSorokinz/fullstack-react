@@ -1,29 +1,45 @@
 "use client";
 
 import CarListingList from "@/components/carListings/List";
-import SearchForm from "@/components/SearchForm";
+import SearchForm from "@/components/forms/SearchForm";
 import { FilterValuesType, FiltersType } from "@/types/filters";
-import { FC, useState } from "react";
+import { FC, useCallback, useContext, useState } from "react";
 import { CarListing } from "@/types/listings";
-import { fetchCarListings } from "@/lib";
+import { fetchCarListings, fetchFilters } from "@/lib";
+import { debounce } from "@/lib/utils";
+import { createDashboardStore, useDashboardStore } from "@/stores/dashboard";
+import { DashboardContext, DashboardProvider } from "@/contexts/dashboard";
 
 type Props = {
-  initialFilterData: FiltersType;
   initialFilters: FilterValuesType;
-  initialListings: CarListing[];
 };
-const DashboardContent: FC<Props> = ({
-  initialFilterData,
-  initialFilters,
-  initialListings,
-}) => {
-  const [listings, setListings] = useState(initialListings);
+const DashboardContent: FC<Props> = ({ initialFilters }) => {
+  const { filterData, listings, setFilterData, setListings } =
+    useDashboardStore((store) => store);
 
   const handleSubmit = async (filters: Partial<FilterValuesType>) => {
     const nextListings = await fetchCarListings(filters);
     setListings(nextListings!);
   };
+  const handleChange = useCallback(
+    debounce(
+      1500,
+      async (filters: FilterValuesType, isDependencyFilter: boolean) => {
+        if (isDependencyFilter) {
+          const nextFilterData = await fetchFilters(filters);
+          setFilterData(nextFilterData);
+        }
+
+        const nextListings = await fetchCarListings(filters);
+        setListings(nextListings!);
+      }
+    ),
+    []
+  );
   const handleReset = async () => {
+    const nextFilterData = await fetchFilters();
+    setFilterData(nextFilterData);
+
     const nextListings = await fetchCarListings();
     setListings(nextListings!);
   };
@@ -35,13 +51,13 @@ const DashboardContent: FC<Props> = ({
       </aside>
       <div className="flex flex-[4] flex-col justify-between">
         <SearchForm
-          initialFilterData={initialFilterData}
+          filterData={filterData!}
           initialFilters={initialFilters}
           onSubmit={handleSubmit}
+          onChange={handleChange}
           onReset={handleReset}
         />
-
-        <CarListingList listings={listings} />
+        <CarListingList listings={listings} allowEdit={true} />
       </div>
     </div>
   );

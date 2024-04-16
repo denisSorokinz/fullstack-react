@@ -1,15 +1,92 @@
 "use client";
 
-import { FC, useState } from "react";
-import CarListing from "@/components/carListings/ListItem";
+import { FC, useCallback, useState } from "react";
+import CarListing from "@/components/carListings/CarListing";
 import { type CarListing as CarListingType } from "@/types/listings";
 import ViewSwitcher from "./ViewSwitcher";
 import { motion, AnimatePresence } from "framer-motion";
+import FlipBox, { flipClassName } from "../FlipBox";
+import { cn } from "@/lib/utils";
+import { getArmyScore } from "@/lib";
+import { Helmet, Pen } from "../icons";
+import EditListing from "./EditListing";
 
 export type ListViewType = "cards" | "list";
 
-const CarListingList: FC<{ listings: CarListingType[] }> = ({ listings }) => {
+const CarListingList: FC<{
+  listings: CarListingType[];
+  allowEdit?: boolean;
+}> = ({ listings, allowEdit }) => {
+  // todo: optimistic listings state
   const [view, setView] = useState<ListViewType>("cards");
+
+  const [editingId, setEditingId] = useState<CarListingType["id"] | null>(null);
+
+  const handleFlip = (id: number) => {
+    setEditingId((current) => (id !== current ? id : null));
+  };
+
+  const listingItem = useCallback(
+    (listing: CarListingType) => {
+      const armyScore = getArmyScore(listing);
+
+      const badges = (
+        <div className="badges absolute right-2 top-2 z-10 flex gap-2">
+          {armyScore >= 3 && (
+            <div
+              className={
+                "flex h-8 items-center gap-2 rounded-lg bg-amber-500 px-2 py-1 font-bold shadow-2xl shadow-black"
+              }
+            >
+              <i>
+                <Helmet width={16} height={16} />
+              </i>
+              <span>{armyScore}</span>
+            </div>
+          )}
+          {allowEdit && (
+            <div
+              className={`${cn(
+                "flex h-8 cursor-pointer items-center gap-2 rounded-lg bg-amber-300 px-2 py-1 font-bold shadow-2xl shadow-black",
+                flipClassName
+              )}`}
+            >
+              <i>
+                <Pen width={20} height={20} />
+              </i>
+            </div>
+          )}
+        </div>
+      );
+
+      if (!allowEdit)
+        return (
+          <div className="relative h-full">
+            {badges}
+            <CarListing listing={listing} view={view} />
+          </div>
+        );
+
+      return (
+        <FlipBox
+          isFlipped={editingId === listing.id}
+          dispatchFlip={() => {
+            console.log("[dispatch]", listing.id);
+
+            handleFlip(listing.id);
+          }}
+          front={
+            <div className="relative h-full">
+              {badges}
+              <CarListing listing={listing} view={view} />
+            </div>
+          }
+          back={<EditListing listing={listing} />}
+        />
+      );
+    },
+    [editingId]
+  );
 
   if (listings.length === 0)
     return <h3>Авто за вказаними критеріями не знайдено</h3>;
@@ -28,9 +105,7 @@ const CarListingList: FC<{ listings: CarListingType[] }> = ({ listings }) => {
             className="grid gap-x-6 gap-y-10 md:grid-cols-2 lg:grid-cols-3"
           >
             {listings.map((l) => (
-              <li key={l.id}>
-                <CarListing listing={l} view={view} />
-              </li>
+              <li key={l.id}>{listingItem(l)}</li>
             ))}
           </motion.ul>
         )}
@@ -44,9 +119,7 @@ const CarListingList: FC<{ listings: CarListingType[] }> = ({ listings }) => {
             className="flex flex-col gap-6"
           >
             {listings.map((l) => (
-              <li key={l.id}>
-                <CarListing listing={l} view={view} />
-              </li>
+              <li key={l.id}>{listingItem(l)}</li>
             ))}
           </motion.ul>
         )}

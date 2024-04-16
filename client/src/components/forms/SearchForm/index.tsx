@@ -16,26 +16,26 @@ import { sanitizeObject } from "@/lib/utils";
 import { fetchFilters } from "@/lib";
 
 type SearchFormProps = {
-  initialFilterData: FiltersType;
+  filterData: FiltersType;
   initialFilters: FilterValuesType;
   onSubmit?: (formData: Partial<FilterValuesType>) => void;
+  onChange?: (formData: FilterValuesType, isDependencyFilter: boolean) => void;
   onReset?: () => void;
 };
 
 const SearchForm: FC<SearchFormProps> = ({
-  initialFilterData,
+  filterData,
   initialFilters,
   onSubmit,
+  onChange,
   onReset,
 }) => {
   const defaultFilters = useMemo(
-    () => getDefaultFilters(initialFilterData, initialFilters),
-    [initialFilterData, initialFilters]
+    () => getDefaultFilters(filterData, initialFilters),
+    [filterData, initialFilters]
   );
 
-  const [filterData, setFilterData] = useState(initialFilterData);
   const [filters, setFilters] = useState(defaultFilters);
-
 
   const handleFilterChange = async (
     changedFilterName: FILTER_NAMES,
@@ -77,10 +77,7 @@ const SearchForm: FC<SearchFormProps> = ({
 
     setFilters(nextFilters);
 
-    if (isDependencyFilter) {
-      const nextFilterData = await fetchFilters(nextFilters);
-      setFilterData(nextFilterData!);
-    }
+    onChange && onChange(nextFilters, isDependencyFilter);
   };
 
   const handleSubmit = (ev: FormEvent) => {
@@ -92,10 +89,7 @@ const SearchForm: FC<SearchFormProps> = ({
   };
 
   const handleReset = async () => {
-    const defaultFilterData = await fetchFilters();
-    const defaultFilters = getDefaultFilters(initialFilterData);
-
-    setFilterData(defaultFilterData!);
+    const defaultFilters = getDefaultFilters(filterData);
     setFilters(defaultFilters);
 
     onReset && onReset();
@@ -118,9 +112,11 @@ const SearchForm: FC<SearchFormProps> = ({
       >
         Пошук
       </button>
-      <button onClick={handleReset} type="button">
-        Очистити фільтри
-      </button>
+      {onReset && (
+        <button onClick={handleReset} type="button">
+          Очистити фільтри
+        </button>
+      )}
     </form>
   );
 };

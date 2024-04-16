@@ -14,6 +14,37 @@ const sanitizeObject = <T>(obj: T): Partial<T> => {
 const decodeHtmlString = (str: string) =>
   str.replaceAll("%5B", "[").replaceAll("%5D", "]");
 
+const debounce = (delay: number, fn: Function) => {
+  let latestArgs: any = null;
+
+  let timeout: NodeJS.Timeout | null = null;
+  let didCallWhileTimeout = false;
+  const callFn = () => {
+    if (timeout) {
+      didCallWhileTimeout = true;
+      return;
+    }
+
+    didCallWhileTimeout = false;
+    fn(...latestArgs);
+
+    timeout = setTimeout(() => {
+      timeout = null;
+      if (didCallWhileTimeout) {
+        callFn();
+      }
+
+      didCallWhileTimeout = false;
+    }, delay);
+  };
+
+  return (...args: any) => {
+    latestArgs = args;
+
+    callFn();
+  };
+};
+
 // const formValuesToQuery = (formData: SearchFormValues) => {
 //   const sanitized = sanitizeObject(formData);
 
@@ -33,4 +64,4 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export { sanitizeObject, decodeHtmlString, cn };
+export { sanitizeObject, decodeHtmlString, cn, debounce };

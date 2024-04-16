@@ -10,16 +10,7 @@ import { decodeHtmlString, queryStringToAppliedFiltersTuple, sanitizeFilters } f
 import { Prisma } from '@prisma/client';
 import { ListingType } from '../types/data';
 import { CarApiOperations, CarApiResponse } from '../routers/api/cars';
-
-const validateRange = (filterName: FILTER_NAMES) => {
-  const rules = z.coerce
-    .number()
-    .min((FILTERS_INITIAL[filterName] as IRangeFilter).from)
-    .max((FILTERS_INITIAL[filterName] as IRangeFilter).to)
-    .optional();
-
-  return rules;
-};
+import { validateRange } from '../lib/filters';
 
 // const schema = z.object({
 //   [FILTERS_INITIAL.BRAND.slug]: z.coerce.number().optional(),

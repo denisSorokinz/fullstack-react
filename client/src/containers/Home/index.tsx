@@ -10,7 +10,7 @@ import {
   RANGE_MODIFIERS,
 } from "@/types/filters";
 import { useRouter, useSearchParams } from "next/navigation";
-import SearchForm from "@/components/SearchForm";
+import SearchForm from "@/components/forms/SearchForm";
 import { decodeHtmlString, sanitizeObject } from "@/lib/utils";
 import { fetchFilters } from "@/lib";
 import { CarListing } from "@/types/listings";
@@ -32,6 +32,18 @@ const Home: FC<Props> = ({ initialFilterData, initialFilters, listings }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const invalidateSession = useAuthStore((state) => state.invalidateSession);
+
+  const [filterData, setFilterData] = useState(initialFilterData);
+
+  const handleChange = async (
+    nextFilters: FilterValuesType,
+    isDependencyFilter: boolean
+  ) => {
+    if (!isDependencyFilter) return;
+
+    const nextFilterData = await fetchFilters(nextFilters)!;
+    setFilterData(nextFilterData!);
+  };
 
   const handleSubmit = (filters: Partial<FilterValuesType>) => {
     const sanitized = sanitizeObject(filters);
@@ -55,8 +67,9 @@ const Home: FC<Props> = ({ initialFilterData, initialFilters, listings }) => {
   return (
     <>
       <SearchForm
-        initialFilterData={initialFilterData}
+        filterData={filterData}
         initialFilters={initialFilters}
+        onChange={handleChange}
         onSubmit={handleSubmit}
         onReset={handleReset}
       />

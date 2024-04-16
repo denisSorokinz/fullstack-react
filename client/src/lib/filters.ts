@@ -7,6 +7,8 @@ import {
   RANGE_MODIFIERS,
   SingleFilterType,
 } from "@/types/filters";
+import { AbstractObject } from "@/types/utilities";
+import { z } from "zod";
 
 const parseFiltersFromSearch = (searchParams: {
   [k in FILTER_SLUGS | string]: string;
@@ -156,4 +158,20 @@ const clearDependencyFilters = (
   return clearDependencyFilters(filterData, filters, childFilterName);
 };
 
-export { parseFiltersFromSearch, getDefaultFilters, sanitizeFilters, clearDependencyFilters };
+const validateRange = (filterData: FiltersType, filterName: FILTER_NAMES) => {
+  const rules = z.coerce
+    .number()
+    .min((filterData[filterName] as IRangeFilter).from)
+    .max((filterData[filterName] as IRangeFilter).to)
+    .optional();
+
+  return rules;
+};
+
+export {
+  parseFiltersFromSearch,
+  getDefaultFilters,
+  sanitizeFilters,
+  clearDependencyFilters,
+  validateRange,
+};

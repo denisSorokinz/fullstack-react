@@ -4,19 +4,24 @@ import DashboardContent from "@/containers/Dashboard";
 import ProtectedRouteCmp from "@/components/ProtectedRouteCmp";
 import { fetchCarListings, fetchFilters } from "@/lib";
 import CarListingList from "@/components/carListings/List";
-import SearchForm from "@/components/SearchForm";
+import SearchForm from "@/components/forms/SearchForm";
 import { getDefaultFilters } from "@/lib/filters";
 import { FILTER_NAMES } from "@/constants";
+import { DashboardProvider } from "@/contexts/dashboard";
 
 const DashboardPage = async () => {
   const filterData = await fetchFilters();
-  const listings = await fetchCarListings();
+  const listings = (await fetchCarListings()) || [];
 
   const filters = getDefaultFilters(filterData!);
 
   return (
     <ProtectedRouteCmp>
-      <DashboardContent initialFilterData={filterData!} initialFilters={filters} initialListings={listings!} />
+      <DashboardProvider initProps={{ listings, filterData }}>
+        <DashboardContent
+          initialFilters={filters}
+        />
+      </DashboardProvider>
     </ProtectedRouteCmp>
   );
 
