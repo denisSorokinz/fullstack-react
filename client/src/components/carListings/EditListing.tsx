@@ -10,8 +10,8 @@ type Props = {
 };
 const EditListing: FC<Props> = ({ listing }) => {
   return (
-    <div className={cn(flipClassName, "h-full cursor-pointer")}>
-      <EditListingForm initialListing={listing} />
+    <div className={cn(flipClassName, "cursor-pointer")}>
+      <EditListingForm listing={listing} />
     </div>
   );
 };

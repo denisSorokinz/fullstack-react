@@ -35,6 +35,7 @@ type SingleFilterType = ISelectFilter | IRangeFilter;
 type FiltersType = Record<FILTER_NAMES, SingleFilterType>;
 
 export {
+  type FilterOption,
   type SingleFilterType,
   type FilterValuesType,
   type FiltersType,

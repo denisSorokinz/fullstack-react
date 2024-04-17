@@ -35,6 +35,8 @@ const ENDPOINTS = {
     GET_FILTERS: "filters",
     GET_CAR_LISTINGS: "search",
     GET_CAR_LISTING: "listing",
+    GET_BRANDS: "brands",
+    GET_MODELS_BY_BRAND: "brands/:brandId/models",
   },
   AUTH: {
     NEXT_BASE_AUTH: `${NEXT_BASE_URL}/auth`,

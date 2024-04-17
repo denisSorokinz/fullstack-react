@@ -3,7 +3,7 @@ import { decodeHtmlString, deepClone, queryStringToAppliedFiltersTuple, sanitize
 import { FILTERS_INITIAL, ENDPOINTS, FiltersType } from '../../../constants';
 import PrismaClientSingleton from '../../../prisma/client';
 import { Prisma, PrismaClient } from '@prisma/client';
-import { FILTER_NAMES, RANGE_MODIFIERS } from '../../../types/filters';
+import { FILTER_NAMES, FilterOption, RANGE_MODIFIERS } from '../../../types/filters';
 import { ApiRequest } from '../../../types/http';
 import { ExcludeLens } from '../../../lib/lenses';
 import { UnwrapPromise } from '@prisma/client/runtime/library';
@@ -29,6 +29,8 @@ export enum CarApiOperations {
   editListing = 'listing',
   deleteListing = 'listing',
   getListings = 'listings',
+  getBrands = 'brands',
+  getModelsByBrand = 'models',
 }
 export type CarApiResponse<T> =
   | { success: false; message?: string; error?: ZodError }
@@ -39,6 +41,8 @@ export type CarApiResponse<T> =
         [CarApiOperations.getListing]?: T extends CarApiOperations.getListing ? ListingType : undefined;
         [CarApiOperations.editListing]?: T extends CarApiOperations.editListing ? ListingType : undefined;
         [CarApiOperations.getListings]?: T extends CarApiOperations.getListings ? Array<ListingType> : undefined;
+        [CarApiOperations.getBrands]?: T extends CarApiOperations.getBrands ? Array<FilterOption> : undefined;
+        [CarApiOperations.getModelsByBrand]?: T extends CarApiOperations.getModelsByBrand ? Array<FilterOption> : undefined;
       };
     };
 
@@ -107,6 +111,30 @@ riaApiRouter.get('/search', async (req, res) => {
   const mapped = listings.map(mapListingFields);
 
   res.status(200).json({ success: true, data: { listings: mapped } } as CarApiResponse<CarApiOperations.getListings>);
+});
+
+riaApiRouter.get('/brands', async (req, res) => {
+  // fetch all brands from Prisma
+  const brands = await prisma.brand.findMany();
+  if (brands.length === 0)
+    return res.status(400).send({ success: false, message: 'no brands available' } as CarApiResponse<CarApiOperations.getBrands>);
+
+  // return response
+  return res.status(200).send({ success: true, data: { brands } } as CarApiResponse<CarApiOperations.getBrands>);
+});
+riaApiRouter.get('/brands/:brandId/models', async (req, res) => {
+  const brandId = Number(req.params.brandId);
+
+  if (isNaN(brandId))
+    return res.status(400).send({ success: false, message: 'no brand id provided' } as CarApiResponse<CarApiOperations.getModelsByBrand>);
+
+  // fetch all models for brandId in Prisma
+  const models = await prisma.model.findMany({ where: { brandId } });
+  if (models.length === 0)
+    return res.status(400).send({ success: false, message: 'mo models available' } as CarApiResponse<CarApiOperations.getModelsByBrand>);
+
+  // return response
+  return res.status(200).send({ success: true, data: { models } } as CarApiResponse<CarApiOperations.getModelsByBrand>);
 });
 
 riaApiRouter.get('/listing/:id', async (req, res) => {

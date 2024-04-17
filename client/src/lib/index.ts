@@ -6,13 +6,30 @@ import { CarApiOperations, CarApiResponse } from "@/types/http";
 
 const fetchRiaApi = async <T>(
   endpoint: string,
-  params?: URLSearchParams,
-  requestInit?: RequestInit
+  queryParams?: URLSearchParams,
+  requestInit?: RequestInit,
+  pathParams?: string[]
 ): Promise<CarApiResponse<T>> => {
   let url = `${ENDPOINTS.CARS_API}/${endpoint}`;
 
-  if (params && params.toString().length > 0)
-    url += `?${decodeHtmlString(params.toString())}`;
+  const urlPathParams = url.match(/\/(\:\w+)\//g);
+  if (urlPathParams) {
+    if (!pathParams || urlPathParams.length !== pathParams.length) {
+      return Promise.resolve({
+        success: false,
+        message: "invalid path params",
+      } as CarApiResponse<T>);
+    }
+
+    urlPathParams.forEach(
+      (param, idx) => (url = url.replace(param, `/${pathParams[idx]}/`))
+    );
+
+    console.log({ urlWithPathParams: url });
+  }
+
+  if (queryParams && queryParams.toString().length > 0)
+    url += `?${decodeHtmlString(queryParams.toString())}`;
 
   const data = (await (
     await fetch(url, {
@@ -72,6 +89,31 @@ const fetchListingDetails = async (id: string) => {
   if (!res.success) return null;
 
   return res.data[CarApiOperations.getListing];
+};
+
+const fetchBrands = async () => {
+  const res = await fetchRiaApi<CarApiOperations.getBrands>(
+    `${ENDPOINTS.QUERIES.GET_BRANDS}`,
+    undefined,
+    { next: { revalidate: 60 } }
+  );
+
+  if (!res.success) return null;
+
+  return res.data[CarApiOperations.getBrands];
+};
+
+const fetchModelsByBrand = async (brandId: number) => {
+  const res = await fetchRiaApi<CarApiOperations.getModelsByBrand>(
+    `${ENDPOINTS.QUERIES.GET_MODELS_BY_BRAND}`,
+    undefined,
+    { next: { revalidate: 60 } },
+    [`${brandId}`]
+  );
+
+  if (!res.success) return null;
+
+  return res.data[CarApiOperations.getModelsByBrand];
 };
 
 const getArmyScore = ({ price, mileage, year }: CarListing) => {
@@ -143,5 +185,7 @@ export {
   fetchFilters,
   fetchCarListings,
   fetchListingDetails,
+  fetchBrands,
+  fetchModelsByBrand,
   getArmyScore,
 };

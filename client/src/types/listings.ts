@@ -10,6 +10,7 @@ interface ICarListing {
   thumbnailUrl: string;
   brand: string;
   model: string;
+  description: string;
 }
 
 type CarListing = ICarListing & {
@@ -17,7 +18,6 @@ type CarListing = ICarListing & {
 };
 
 type CarListingExpanded = CarListing & {
-  description: string;
   images: string[];
 };
 

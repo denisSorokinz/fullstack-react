@@ -8,18 +8,16 @@ import { CarListing } from "@/types/listings";
 import { fetchCarListings, fetchFilters } from "@/lib";
 import { debounce } from "@/lib/utils";
 import { createDashboardStore, useDashboardStore } from "@/stores/dashboard";
-import { DashboardContext, DashboardProvider } from "@/contexts/dashboard";
 
 type Props = {
   initialFilters: FilterValuesType;
 };
 const DashboardContent: FC<Props> = ({ initialFilters }) => {
-  const { filterData, listings, setFilterData, setListings } =
-    useDashboardStore((store) => store);
+  const dashboardStore = useDashboardStore((store) => store);
 
   const handleSubmit = async (filters: Partial<FilterValuesType>) => {
     const nextListings = await fetchCarListings(filters);
-    setListings(nextListings!);
+    dashboardStore.setListings(nextListings!);
   };
   const handleChange = useCallback(
     debounce(
@@ -27,21 +25,21 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
       async (filters: FilterValuesType, isDependencyFilter: boolean) => {
         if (isDependencyFilter) {
           const nextFilterData = await fetchFilters(filters);
-          setFilterData(nextFilterData);
+          dashboardStore.setFilterData(nextFilterData);
         }
 
         const nextListings = await fetchCarListings(filters);
-        setListings(nextListings!);
+        dashboardStore.setListings(nextListings!);
       }
     ),
     []
   );
   const handleReset = async () => {
     const nextFilterData = await fetchFilters();
-    setFilterData(nextFilterData);
+    dashboardStore.setFilterData(nextFilterData);
 
     const nextListings = await fetchCarListings();
-    setListings(nextListings!);
+    dashboardStore.setListings(nextListings!);
   };
 
   return (
@@ -51,13 +49,17 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
       </aside>
       <div className="flex flex-[4] flex-col justify-between">
         <SearchForm
-          filterData={filterData!}
+          filterData={dashboardStore.filterData!}
           initialFilters={initialFilters}
           onSubmit={handleSubmit}
           onChange={handleChange}
           onReset={handleReset}
         />
-        <CarListingList listings={listings} allowEdit={true} />
+        <CarListingList
+          listings={dashboardStore.listings}
+          allowEdit={true}
+          editProps={{ dashboardStoreState: dashboardStore }}
+        />
       </div>
     </div>
   );

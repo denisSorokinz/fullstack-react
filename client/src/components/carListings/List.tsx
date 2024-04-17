@@ -1,29 +1,56 @@
 "use client";
 
-import { FC, useCallback, useState } from "react";
+import { FC, useCallback, useEffect, useState } from "react";
 import CarListing from "@/components/carListings/CarListing";
 import { type CarListing as CarListingType } from "@/types/listings";
 import ViewSwitcher from "./ViewSwitcher";
 import { motion, AnimatePresence } from "framer-motion";
 import FlipBox, { flipClassName } from "../FlipBox";
 import { cn } from "@/lib/utils";
-import { getArmyScore } from "@/lib";
+import { fetchBrands, fetchModelsByBrand, getArmyScore } from "@/lib";
 import { Helmet, Pen } from "../icons";
 import EditListing from "./EditListing";
+import { DashboardStoreState, useDashboardStore } from "@/stores/dashboard";
 
 export type ListViewType = "cards" | "list";
 
-const CarListingList: FC<{
+type Props = {
   listings: CarListingType[];
-  allowEdit?: boolean;
-}> = ({ listings, allowEdit }) => {
+} & (
+  | {
+      allowEdit?: false;
+    }
+  | {
+      allowEdit?: true;
+      editProps: { dashboardStoreState: DashboardStoreState };
+    }
+);
+const CarListingList: FC<Props> = ({ listings, ...props }) => {
   // todo: optimistic listings state
   const [view, setView] = useState<ListViewType>("cards");
 
   const [editingId, setEditingId] = useState<CarListingType["id"] | null>(null);
 
-  const handleFlip = (id: number) => {
-    setEditingId((current) => (id !== current ? id : null));
+  const handleFlip = async (listing: CarListingType) => {
+    setEditingId((current) => (listing.id !== current ? listing.id : null));
+
+    if (props.allowEdit) {
+      const { editListingOptions: editOptions, updateStore } =
+        props.editProps.dashboardStoreState;
+
+      const nextEditOptions = { ...editOptions };
+      if (editOptions.brands.length === 0) {
+        const brands = await fetchBrands();
+        if (brands) nextEditOptions.brands = brands;
+      }
+
+      if (!editOptions.models.get(listing.brandId)) {
+        const models = await fetchModelsByBrand(listing.brandId);
+        if (models) nextEditOptions.models.set(listing.brandId, models);
+      }
+
+      updateStore({ editListingOptions: nextEditOptions });
+    }
   };
 
   const listingItem = useCallback(
@@ -44,7 +71,7 @@ const CarListingList: FC<{
               <span>{armyScore}</span>
             </div>
           )}
-          {allowEdit && (
+          {props.allowEdit && (
             <div
               className={`${cn(
                 "flex h-8 cursor-pointer items-center gap-2 rounded-lg bg-amber-300 px-2 py-1 font-bold shadow-2xl shadow-black",
@@ -59,7 +86,7 @@ const CarListingList: FC<{
         </div>
       );
 
-      if (!allowEdit)
+      if (!props.allowEdit)
         return (
           <div className="relative h-full">
             {badges}
@@ -73,7 +100,7 @@ const CarListingList: FC<{
           dispatchFlip={() => {
             console.log("[dispatch]", listing.id);
 
-            handleFlip(listing.id);
+            handleFlip(listing);
           }}
           front={
             <div className="relative h-full">

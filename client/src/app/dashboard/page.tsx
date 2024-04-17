@@ -2,12 +2,13 @@ import { FormEvent, Suspense } from "react";
 import DashboardContent from "@/containers/Dashboard";
 // import protectedRoute from "@/components/protectedRoute";
 import ProtectedRouteCmp from "@/components/ProtectedRouteCmp";
-import { fetchCarListings, fetchFilters } from "@/lib";
+import { fetchBrands, fetchCarListings, fetchFilters } from "@/lib";
 import CarListingList from "@/components/carListings/List";
 import SearchForm from "@/components/forms/SearchForm";
 import { getDefaultFilters } from "@/lib/filters";
 import { FILTER_NAMES } from "@/constants";
 import { DashboardProvider } from "@/contexts/dashboard";
+import { ISelectFilter } from "@/types/filters";
 
 const DashboardPage = async () => {
   const filterData = await fetchFilters();
@@ -15,12 +16,18 @@ const DashboardPage = async () => {
 
   const filters = getDefaultFilters(filterData!);
 
+  const brands = (await fetchBrands()) || [];
+
   return (
     <ProtectedRouteCmp>
-      <DashboardProvider initProps={{ listings, filterData }}>
-        <DashboardContent
-          initialFilters={filters}
-        />
+      <DashboardProvider
+        initProps={{
+          listings,
+          filterData,
+          brands,
+        }}
+      >
+        <DashboardContent initialFilters={filters} />
       </DashboardProvider>
     </ProtectedRouteCmp>
   );
