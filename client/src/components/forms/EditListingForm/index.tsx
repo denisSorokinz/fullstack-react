@@ -78,6 +78,7 @@ const editableFields: {
     displayName: "Iнформацiя",
   },
 };
+
 const getSchema = (filterData: FiltersType) =>
   z.object({
     brandId: z.number(),
@@ -88,11 +89,13 @@ const getSchema = (filterData: FiltersType) =>
     mileage: validateRange(filterData, FILTER_NAMES.MILEAGE),
     price: validateRange(filterData, FILTER_NAMES.PRICE),
   });
+export type EditListingFormData = z.infer<ReturnType<typeof getSchema>>;
 
 type Props = {
   listing: CarListing;
+  onSubmit: (formData: EditListingFormData) => void;
 };
-const EditListingForm: FC<Props> = ({ listing }) => {
+const EditListingForm: FC<Props> = ({ listing, onSubmit }) => {
   // filterData: props or context or zodStore?
 
   const { filterData, editOptions } = useDashboardStore((store) => ({
@@ -108,13 +111,9 @@ const EditListingForm: FC<Props> = ({ listing }) => {
     resolver: zodResolver(schema),
   });
 
-  function handleSubmit(formData: z.infer<typeof schema>) {
-    console.log({ editFormData: formData });
-  }
-
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {Object.keys(listing).map((field) => {
           if (!(editableFields as any)[field]) return null;
 

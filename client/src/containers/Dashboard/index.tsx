@@ -3,7 +3,7 @@
 import CarListingList from "@/components/carListings/List";
 import SearchForm from "@/components/forms/SearchForm";
 import { FilterValuesType, FiltersType } from "@/types/filters";
-import { FC, useCallback, useContext, useState } from "react";
+import { FC, useCallback, useContext, useEffect, useState } from "react";
 import { CarListing } from "@/types/listings";
 import { fetchCarListings, fetchFilters } from "@/lib";
 import { debounce } from "@/lib/utils";
@@ -25,7 +25,7 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
       async (filters: FilterValuesType, isDependencyFilter: boolean) => {
         if (isDependencyFilter) {
           const nextFilterData = await fetchFilters(filters);
-          dashboardStore.setFilterData(nextFilterData);
+          dashboardStore.setFilterData(nextFilterData!);
         }
 
         const nextListings = await fetchCarListings(filters);
@@ -36,11 +36,15 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
   );
   const handleReset = async () => {
     const nextFilterData = await fetchFilters();
-    dashboardStore.setFilterData(nextFilterData);
+    dashboardStore.setFilterData(nextFilterData!);
 
     const nextListings = await fetchCarListings();
     dashboardStore.setListings(nextListings!);
   };
+
+  const handleEditListing = (listing: Pick<CarListing, 'id'> & Partial<CarListing>) => {
+    
+  }
 
   return (
     <div className="flex gap-8">
@@ -58,7 +62,10 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
         <CarListingList
           listings={dashboardStore.listings}
           allowEdit={true}
-          editProps={{ dashboardStoreState: dashboardStore }}
+          editProps={{
+            onToggleEditing: dashboardStore.onToggleEditing,
+            onEdit: handleEditListing
+          }}
         />
       </div>
     </div>

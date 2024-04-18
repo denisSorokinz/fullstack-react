@@ -38,6 +38,9 @@ const ENDPOINTS = {
     GET_BRANDS: "brands",
     GET_MODELS_BY_BRAND: "brands/:brandId/models",
   },
+  MUTATIONS: {
+    UPDATE_LISTING: "/listing/:listingId"
+  },
   AUTH: {
     NEXT_BASE_AUTH: `${NEXT_BASE_URL}/auth`,
     [AUTH_OPERATIONS.LOGIN]: `${BASE_API_URL}/auth/login`,

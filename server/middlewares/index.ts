@@ -77,10 +77,10 @@ const validateEditListingRequest = (req: Request, res: Response, next: NextFunct
   const params = req.params as { id: string };
   const id = params.id && Number(params.id);
 
-  if (!id) return res.status(400).send({ success: false, message: 'no id provided' } as CarApiResponse<CarApiOperations.editListing>);
+  if (!id) return res.status(400).send({ success: false, message: 'no id provided' } as CarApiResponse<CarApiOperations.updateListing>);
 
   const nextListing = req.body as Partial<UnwrapPromise<ReturnType<Prisma.ListingDelegate['findUnique']>>>;
-  if (!nextListing) return res.status(400).send({ success: false, message: 'no input provided' } as CarApiResponse<CarApiOperations.editListing>);
+  if (!nextListing) return res.status(400).send({ success: false, message: 'no input provided' } as CarApiResponse<CarApiOperations.updateListing>);
 
   const schema = z.object({
     brandId: z.number().optional(),
@@ -93,7 +93,7 @@ const validateEditListingRequest = (req: Request, res: Response, next: NextFunct
 
   const parsed = schema.safeParse(nextListing);
   if (!parsed.success) {
-    return res.status(400).send({ success: false, error: parsed.error } as CarApiResponse<CarApiOperations.editListing>);
+    return res.status(400).send({ success: false, error: parsed.error } as CarApiResponse<CarApiOperations.updateListing>);
   }
 
   return next();
@@ -103,7 +103,7 @@ const validateDeleteListingRequest = (req: Request, res: Response, next: NextFun
   const params = req.params as { id: string };
   const id = params.id && Number(params.id);
 
-  if (!id) return res.status(400).send({ success: false, message: 'no id provided' } as CarApiResponse<CarApiOperations.editListing>);
+  if (!id) return res.status(400).send({ success: false, message: 'no id provided' } as CarApiResponse<CarApiOperations.updateListing>);
 
   const schema = z.number().min(0, 'id is required');
 

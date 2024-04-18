@@ -26,7 +26,7 @@ prisma.model.findMany().then((res) => (models = res));
 export enum CarApiOperations {
   getFilters = 'filters',
   getListing = 'listing',
-  editListing = 'listing',
+  updateListing = 'listing',
   deleteListing = 'listing',
   getListings = 'listings',
   getBrands = 'brands',
@@ -39,7 +39,7 @@ export type CarApiResponse<T> =
       data: {
         [CarApiOperations.getFilters]?: T extends CarApiOperations.getFilters ? FiltersType : undefined;
         [CarApiOperations.getListing]?: T extends CarApiOperations.getListing ? ListingType : undefined;
-        [CarApiOperations.editListing]?: T extends CarApiOperations.editListing ? ListingType : undefined;
+        [CarApiOperations.updateListing]?: T extends CarApiOperations.updateListing ? ListingType : undefined;
         [CarApiOperations.getListings]?: T extends CarApiOperations.getListings ? Array<ListingType> : undefined;
         [CarApiOperations.getBrands]?: T extends CarApiOperations.getBrands ? Array<FilterOption> : undefined;
         [CarApiOperations.getModelsByBrand]?: T extends CarApiOperations.getModelsByBrand ? Array<FilterOption> : undefined;
@@ -158,13 +158,13 @@ riaApiRouter.put('/listing/:id', authGuard, validateEditListingRequest, async (r
 
   const listingExists = await prisma.listing.findUnique({ where: { id } });
   if (!listingExists)
-    return res.status(400).send({ success: false, message: 'listing does not exist' } as CarApiResponse<CarApiOperations.editListing>);
+    return res.status(400).send({ success: false, message: 'listing does not exist' } as CarApiResponse<CarApiOperations.updateListing>);
 
   const noIdLens = ExcludeLens.from('id');
   const updatedProperties = noIdLens.view(nextListing);
   const updated = await prisma.listing.update({ data: { ...updatedProperties }, where: { id } });
 
-  return res.status(200).send({ success: true, data: { listing: updated } } as CarApiResponse<CarApiOperations.editListing>);
+  return res.status(200).send({ success: true, data: { listing: updated } } as CarApiResponse<CarApiOperations.updateListing>);
 });
 
 riaApiRouter.delete('/listing/:id', authGuard, validateDeleteListingRequest, async (req, res) => {
@@ -173,7 +173,7 @@ riaApiRouter.delete('/listing/:id', authGuard, validateDeleteListingRequest, asy
 
   const listingExists = await prisma.listing.findUnique({ where: { id } });
   if (!listingExists)
-    return res.status(400).send({ success: false, message: 'listing does not exist' } as CarApiResponse<CarApiOperations.editListing>);
+    return res.status(400).send({ success: false, message: 'listing does not exist' } as CarApiResponse<CarApiOperations.updateListing>);
 
   await prisma.listing.delete({ where: { id } });
 

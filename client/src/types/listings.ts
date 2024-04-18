@@ -4,13 +4,13 @@ interface ICarListing {
   modelId: number;
   year: number;
   price: number;
-  mileage: number;
+  mileage?: number;
   createdAt: Date;
   slug: string;
-  thumbnailUrl: string;
+  thumbnailUrl?: string;
   brand: string;
   model: string;
-  description: string;
+  description?: string;
 }
 
 type CarListing = ICarListing & {
@@ -18,7 +18,7 @@ type CarListing = ICarListing & {
 };
 
 type CarListingExpanded = CarListing & {
-  images: string[];
+  images?: string[];
 };
 
 export { type CarListing, type CarListingExpanded };

@@ -116,7 +116,24 @@ const fetchModelsByBrand = async (brandId: number) => {
   return res.data[CarApiOperations.getModelsByBrand];
 };
 
+const updateListing = async (
+  listing: Pick<CarListing, "id"> & Partial<CarListing>
+) => {
+  const res = await fetchRiaApi<CarApiOperations.updateListing>(
+    ENDPOINTS.MUTATIONS.UPDATE_LISTING,
+    undefined,
+    { cache: "no-cache" },
+    [`${listing.id}`]
+  );
+
+  if(!res.success) return null;
+
+  return res.data[CarApiOperations.updateListing];
+};
+
 const getArmyScore = ({ price, mileage, year }: CarListing) => {
+  if (mileage === undefined) return 0;
+
   // todo: adjust data & remove
   mileage = mileage * 1000 < 1_000_000 ? mileage * 1000 : mileage;
 
@@ -187,5 +204,6 @@ export {
   fetchListingDetails,
   fetchBrands,
   fetchModelsByBrand,
+  updateListing,
   getArmyScore,
 };

@@ -9,8 +9,8 @@ import FlipBox, { flipClassName } from "../FlipBox";
 import { cn } from "@/lib/utils";
 import { fetchBrands, fetchModelsByBrand, getArmyScore } from "@/lib";
 import { Helmet, Pen } from "../icons";
-import EditListing from "./EditListing";
 import { DashboardStoreState, useDashboardStore } from "@/stores/dashboard";
+import EditableCarListing, { ListingEditProps } from "./EditableCarListing";
 
 export type ListViewType = "cards" | "list";
 
@@ -22,7 +22,12 @@ type Props = {
     }
   | {
       allowEdit?: true;
-      editProps: { dashboardStoreState: DashboardStoreState };
+      editProps: {
+        onToggleEditing: DashboardStoreState["onToggleEditing"];
+        onEdit: (
+          listing: Pick<CarListingType, "id"> & Partial<CarListingType>
+        ) => void;
+      };
     }
 );
 const CarListingList: FC<Props> = ({ listings, ...props }) => {
@@ -31,89 +36,32 @@ const CarListingList: FC<Props> = ({ listings, ...props }) => {
 
   const [editingId, setEditingId] = useState<CarListingType["id"] | null>(null);
 
-  const handleFlip = async (listing: CarListingType) => {
-    setEditingId((current) => (listing.id !== current ? listing.id : null));
-
+  const carListing = (listing: CarListingType) => {
+    let editProps = { allowEdit: false } as ListingEditProps;
     if (props.allowEdit) {
-      const { editListingOptions: editOptions, updateStore } =
-        props.editProps.dashboardStoreState;
+      editProps = {
+        allowEdit: true,
+        isEditing: editingId === listing.id,
+        onToggleEditing: () => {
+          setEditingId((current) =>
+            listing.id !== current ? listing.id : null
+          );
 
-      const nextEditOptions = { ...editOptions };
-      if (editOptions.brands.length === 0) {
-        const brands = await fetchBrands();
-        if (brands) nextEditOptions.brands = brands;
-      }
-
-      if (!editOptions.models.get(listing.brandId)) {
-        const models = await fetchModelsByBrand(listing.brandId);
-        if (models) nextEditOptions.models.set(listing.brandId, models);
-      }
-
-      updateStore({ editListingOptions: nextEditOptions });
+          props.editProps.onToggleEditing(listing.brandId);
+        },
+        onEdit: props.editProps.onEdit,
+      };
     }
+
+    return (
+      <EditableCarListing
+        listing={listing}
+        view={view}
+        armyScore={getArmyScore(listing)}
+        {...editProps}
+      />
+    );
   };
-
-  const listingItem = useCallback(
-    (listing: CarListingType) => {
-      const armyScore = getArmyScore(listing);
-
-      const badges = (
-        <div className="badges absolute right-2 top-2 z-10 flex gap-2">
-          {armyScore >= 3 && (
-            <div
-              className={
-                "flex h-8 items-center gap-2 rounded-lg bg-amber-500 px-2 py-1 font-bold shadow-2xl shadow-black"
-              }
-            >
-              <i>
-                <Helmet width={16} height={16} />
-              </i>
-              <span>{armyScore}</span>
-            </div>
-          )}
-          {props.allowEdit && (
-            <div
-              className={`${cn(
-                "flex h-8 cursor-pointer items-center gap-2 rounded-lg bg-amber-300 px-2 py-1 font-bold shadow-2xl shadow-black",
-                flipClassName
-              )}`}
-            >
-              <i>
-                <Pen width={20} height={20} />
-              </i>
-            </div>
-          )}
-        </div>
-      );
-
-      if (!props.allowEdit)
-        return (
-          <div className="relative h-full">
-            {badges}
-            <CarListing listing={listing} view={view} />
-          </div>
-        );
-
-      return (
-        <FlipBox
-          isFlipped={editingId === listing.id}
-          dispatchFlip={() => {
-            console.log("[dispatch]", listing.id);
-
-            handleFlip(listing);
-          }}
-          front={
-            <div className="relative h-full">
-              {badges}
-              <CarListing listing={listing} view={view} />
-            </div>
-          }
-          back={<EditListing listing={listing} />}
-        />
-      );
-    },
-    [editingId]
-  );
 
   if (listings.length === 0)
     return <h3>Авто за вказаними критеріями не знайдено</h3>;
@@ -132,7 +80,7 @@ const CarListingList: FC<Props> = ({ listings, ...props }) => {
             className="grid gap-x-6 gap-y-10 md:grid-cols-2 lg:grid-cols-3"
           >
             {listings.map((l) => (
-              <li key={l.id}>{listingItem(l)}</li>
+              <li key={l.id}>{carListing(l)}</li>
             ))}
           </motion.ul>
         )}
@@ -146,7 +94,7 @@ const CarListingList: FC<Props> = ({ listings, ...props }) => {
             className="flex flex-col gap-6"
           >
             {listings.map((l) => (
-              <li key={l.id}>{listingItem(l)}</li>
+              <li key={l.id}>{carListing(l)}</li>
             ))}
           </motion.ul>
         )}

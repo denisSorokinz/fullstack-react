@@ -8,19 +8,20 @@ export enum CarApiOperations {
   getListings = "listings",
   getBrands = "brands",
   getModelsByBrand = "models",
+  updateListing = "listing",
 }
 export type CarApiResponse<T> =
   | { success: false; message: string }
   | {
       success: true;
       data: {
-        [CarApiOperations.getFilters]: T extends CarApiOperations.getFilters
+        [CarApiOperations.getFilters]?: T extends CarApiOperations.getFilters
           ? FiltersType
           : undefined;
-        [CarApiOperations.getListing]: T extends CarApiOperations.getListing
+        [CarApiOperations.getListing]?: T extends CarApiOperations.getListing
           ? CarListing
           : undefined;
-        [CarApiOperations.getListings]: T extends CarApiOperations.getListings
+        [CarApiOperations.getListings]?: T extends CarApiOperations.getListings
           ? Array<CarListing>
           : undefined;
         [CarApiOperations.getBrands]?: T extends CarApiOperations.getBrands
@@ -28,6 +29,9 @@ export type CarApiResponse<T> =
           : undefined;
         [CarApiOperations.getModelsByBrand]?: T extends CarApiOperations.getModelsByBrand
           ? Array<FilterOption>
+          : undefined;
+        [CarApiOperations.updateListing]?: T extends CarApiOperations.updateListing
+          ? CarListing
           : undefined;
       };
     };

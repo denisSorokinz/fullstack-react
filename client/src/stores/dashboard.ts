@@ -1,4 +1,5 @@
 import { DashboardContext } from "@/contexts/dashboard";
+import { fetchBrands, fetchModelsByBrand } from "@/lib";
 import { DashboardStoreState as DashboardState } from "@/stores/dashboard";
 import { FilterOption, FiltersType } from "@/types/filters";
 import { CarListing } from "@/types/listings";
@@ -17,6 +18,7 @@ type State = {
 type Actions = {
   setFilterData: (nextValue: State["filterData"]) => void;
   setListings: (nextValue: State["listings"]) => void;
+  onToggleEditing: (brandId: CarListing["brandId"]) => void;
   updateStore: (nextValue: Partial<State>) => void;
 };
 
@@ -42,6 +44,22 @@ const createDashboardStore = (
     ...initProps,
     setFilterData: (nextValue) => set({ filterData: nextValue }),
     setListings: (nextValue) => set({ listings: nextValue }),
+    onToggleEditing: async (brandId) => {
+      const options = get().editListingOptions;
+      const nextOptions = { ...options };
+
+      if (options.brands.length === 0) {
+        const brands = await fetchBrands();
+        if (brands) nextOptions.brands = brands;
+      }
+
+      if (!options.models.get(brandId)) {
+        const models = await fetchModelsByBrand(brandId);
+        if (models) nextOptions.models.set(brandId, models);
+      }
+
+      return set({ editListingOptions: nextOptions });
+    },
     updateStore: (nextValue) => set({ ...nextValue }),
   }));
 };
