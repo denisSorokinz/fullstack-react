@@ -10,5 +10,5 @@ export default async function SingleListing({
 
   const listing = await fetchListingDetails(params.slug);
 
-  return <Content listing={listing} />;
+  return <Content listing={listing!} />;
 }

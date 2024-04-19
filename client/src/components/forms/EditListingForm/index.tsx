@@ -207,6 +207,7 @@ const EditListingForm: FC<Props> = ({ listing, onSubmit }) => {
 
           return (
             <FormField
+              key={field}
               control={form.control}
               name={editableProperty}
               render={({ field }) => (

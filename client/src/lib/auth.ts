@@ -37,7 +37,7 @@ const refreshAccessToken = async (
 > => {
   if (!refreshToken) return { success: false, message: "no refresh token" };
 
-  const res = await fetch(ENDPOINTS.AUTH.NEXT_BASE_AUTH, {
+  const res = await fetch(ENDPOINTS.AUTH.BASE_NEXT_AUTH, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     cache: "no-cache",

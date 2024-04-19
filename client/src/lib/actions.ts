@@ -2,14 +2,21 @@
 
 import { AuthFormData } from "@/components/forms/AuthForm";
 import { AUTH_OPERATIONS, ENDPOINTS } from "@/constants";
-import { AuthJWTPayload, AuthResponse } from "@/types/http";
+import {
+  AuthJWTPayload,
+  AuthResponse,
+  CarApiOperations,
+  CarApiResponse,
+} from "@/types/http";
 import { decode, verify } from "jsonwebtoken";
 import { cookies } from "next/headers";
 import { ExcludeLens } from "./lenses";
 import { AuthStoreState } from "@/stores/auth";
 import { getSessionData, refreshAccessToken, validateToken } from "./auth";
 import { NextResponse } from "next/server";
+import { CarListing } from "@/types/listings";
 
+// AUTH
 const requestInit: RequestInit = {
   method: "POST",
   headers: { "Content-Type": "application/json" },
@@ -23,7 +30,7 @@ const authenticate = async ({
 }: {
   type: AUTH_OPERATIONS;
 } & AuthFormData) => {
-  const res = await fetch(ENDPOINTS.AUTH.NEXT_BASE_AUTH, {
+  const res = await fetch(ENDPOINTS.AUTH.BASE_NEXT_AUTH, {
     ...requestInit,
     body: JSON.stringify({ type, email, password }),
   });
@@ -85,4 +92,32 @@ const logout = () => {
   return { success: true };
 };
 
-export { authenticate, logout, isAuthenticated };
+// LISTINGS
+const updateListing = async (
+  edited: Pick<CarListing, "id"> & Partial<CarListing>
+) => {
+  const sessionValid = isAuthenticated();
+  if (!sessionValid) return { success: false, message: "no access" };
+
+  const token = cookies().get("accessToken")!.value;
+
+  console.log("[server-action-1]");
+  const res = await fetch(`${ENDPOINTS.BASE_NEXT_LISTINGS}`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ ...edited }),
+  });
+  const json =
+    (await res.json()) as CarApiResponse<CarApiOperations.updateListing>;
+  console.log("[server-action-2]", json);
+
+  if (!json.success) return { ...json };
+
+  if (json.success)
+    return {
+      success: true,
+      listing: json.data[CarApiOperations.updateListing]!,
+    };
+};
+
+export { authenticate, logout, isAuthenticated, updateListing };

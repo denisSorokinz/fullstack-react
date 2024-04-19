@@ -137,7 +137,7 @@ riaApiRouter.get('/brands/:brandId/models', async (req, res) => {
   return res.status(200).send({ success: true, data: { models } } as CarApiResponse<CarApiOperations.getModelsByBrand>);
 });
 
-riaApiRouter.get('/listing/:id', async (req, res) => {
+riaApiRouter.get('/listings/:id', async (req, res) => {
   const id = Number(req.params.id);
   if (id === undefined) return res.status(400).send({ success: false, message: 'please provide listing id' });
 
@@ -149,8 +149,9 @@ riaApiRouter.get('/listing/:id', async (req, res) => {
   return res.status(200).send({ success: true, data: { listing: mapped } });
 });
 
-// todo: parse id from req params
-riaApiRouter.put('/listing/:id', authGuard, validateEditListingRequest, async (req, res) => {
+riaApiRouter.put('/listings/:id', authGuard, validateEditListingRequest, async (req, res) => {
+  console.log('[server-edit-listing]')
+
   const params = req.params as { id: string };
   const id = Number(params.id);
 
@@ -164,10 +165,12 @@ riaApiRouter.put('/listing/:id', authGuard, validateEditListingRequest, async (r
   const updatedProperties = noIdLens.view(nextListing);
   const updated = await prisma.listing.update({ data: { ...updatedProperties }, where: { id } });
 
-  return res.status(200).send({ success: true, data: { listing: updated } } as CarApiResponse<CarApiOperations.updateListing>);
+  const mapped = mapListingFields(updated);
+
+  return res.status(200).send({ success: true, data: { listing: mapped } } as CarApiResponse<CarApiOperations.updateListing>);
 });
 
-riaApiRouter.delete('/listing/:id', authGuard, validateDeleteListingRequest, async (req, res) => {
+riaApiRouter.delete('/listings/:id', authGuard, validateDeleteListingRequest, async (req, res) => {
   const params = req.params as { id: string };
   const id = Number(params.id);
 

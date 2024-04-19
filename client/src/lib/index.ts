@@ -12,7 +12,9 @@ const fetchRiaApi = async <T>(
 ): Promise<CarApiResponse<T>> => {
   let url = `${ENDPOINTS.CARS_API}/${endpoint}`;
 
-  const urlPathParams = url.match(/\/(\:\w+)\//g);
+  const urlPathParams = endpoint.match(/(\:\w+)/g);
+  console.log({ urlPathParams });
+
   if (urlPathParams) {
     if (!pathParams || urlPathParams.length !== pathParams.length) {
       return Promise.resolve({
@@ -22,7 +24,7 @@ const fetchRiaApi = async <T>(
     }
 
     urlPathParams.forEach(
-      (param, idx) => (url = url.replace(param, `/${pathParams[idx]}/`))
+      (param, idx) => (url = url.replace(param, pathParams[idx]))
     );
 
     console.log({ urlWithPathParams: url });
@@ -80,11 +82,12 @@ const fetchCarListings = async (filterValues?: Partial<FilterValuesType>) => {
 
 const fetchListingDetails = async (id: string) => {
   const res = await fetchRiaApi<CarApiOperations.getListing>(
-    `${ENDPOINTS.QUERIES.GET_CAR_LISTING}/${id}`,
+    `${ENDPOINTS.QUERIES.GET_CAR_LISTING}`,
     undefined,
     {
       next: { revalidate: 1 },
-    }
+    },
+    [`${id}`]
   );
   if (!res.success) return null;
 
@@ -114,21 +117,6 @@ const fetchModelsByBrand = async (brandId: number) => {
   if (!res.success) return null;
 
   return res.data[CarApiOperations.getModelsByBrand];
-};
-
-const updateListing = async (
-  listing: Pick<CarListing, "id"> & Partial<CarListing>
-) => {
-  const res = await fetchRiaApi<CarApiOperations.updateListing>(
-    ENDPOINTS.MUTATIONS.UPDATE_LISTING,
-    undefined,
-    { cache: "no-cache" },
-    [`${listing.id}`]
-  );
-
-  if(!res.success) return null;
-
-  return res.data[CarApiOperations.updateListing];
 };
 
 const getArmyScore = ({ price, mileage, year }: CarListing) => {
@@ -204,6 +192,5 @@ export {
   fetchListingDetails,
   fetchBrands,
   fetchModelsByBrand,
-  updateListing,
   getArmyScore,
 };

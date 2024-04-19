@@ -8,6 +8,7 @@ import { CarListing } from "@/types/listings";
 import { fetchCarListings, fetchFilters } from "@/lib";
 import { debounce } from "@/lib/utils";
 import { createDashboardStore, useDashboardStore } from "@/stores/dashboard";
+import { updateListing } from "@/lib/actions";
 
 type Props = {
   initialFilters: FilterValuesType;
@@ -42,9 +43,30 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
     dashboardStore.setListings(nextListings!);
   };
 
-  const handleEditListing = (listing: Pick<CarListing, 'id'> & Partial<CarListing>) => {
-    
-  }
+  const handleEditListing = async (
+    edited: Pick<CarListing, "id"> & Partial<CarListing>
+  ) => {
+    const editedIdx = dashboardStore.listings.findIndex(
+      (l) => l.id === edited.id
+    );
+    if (editedIdx === -1) return;
+
+    const res = await updateListing(edited);
+    if (!(res && res.success)) return;
+
+    const nextListingList = [...dashboardStore.listings];
+    console.log({ editedListing: res.listing })
+    nextListingList.splice(
+      editedIdx,
+      1,
+      res.listing!
+    );
+    dashboardStore.setListings(nextListingList);
+  };
+
+  useEffect(() => {
+    console.log("listings state:", { listings: dashboardStore.listings });
+  }, [dashboardStore.listings]);
 
   return (
     <div className="flex gap-8">
@@ -64,7 +86,7 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
           allowEdit={true}
           editProps={{
             onToggleEditing: dashboardStore.onToggleEditing,
-            onEdit: handleEditListing
+            onEdit: handleEditListing,
           }}
         />
       </div>
