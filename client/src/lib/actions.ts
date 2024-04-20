@@ -113,11 +113,12 @@ const updateListing = async (
 
   if (!json.success) return { ...json };
 
-  if (json.success)
+  if (json.success) {
     return {
       success: true,
       listing: json.data[CarApiOperations.updateListing]!,
     };
+  }
 };
 
 export { authenticate, logout, isAuthenticated, updateListing };

@@ -28,7 +28,7 @@ import { DashboardStoreState, useDashboardStore } from "@/stores/dashboard";
 import { FILTER_NAMES, FilterOption, FiltersType } from "@/types/filters";
 import { CarListing } from "@/types/listings";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FC, useMemo } from "react";
+import { FC, useEffect, useMemo } from "react";
 import { ControllerRenderProps, useForm } from "react-hook-form";
 import { ZodDate, ZodNumber, ZodOptional, ZodString, z } from "zod";
 
@@ -110,6 +110,22 @@ const EditListingForm: FC<Props> = ({ listing, onSubmit }) => {
     defaultValues: listing,
     resolver: zodResolver(schema),
   });
+
+  const { year, price, mileage, description } = form.watch();
+  useEffect(() => {
+    // if (mode !== SUBMIT_MODES.AUTOSAVE) return;
+
+    if (
+      year === listing.year &&
+      price === listing.price &&
+      mileage === listing.mileage &&
+      description === listing.description
+    )
+      return;
+
+    const autosaveCb = form.handleSubmit(onSubmit);
+    autosaveCb();
+  }, [year, price, mileage, description]);
 
   return (
     <Form {...form}>
