@@ -10,58 +10,58 @@ import { cn } from "@/lib/utils";
 import { fetchBrands, fetchModelsByBrand, getArmyScore } from "@/lib";
 import { Helmet, Pen } from "../icons";
 import { DashboardStoreState, useDashboardStore } from "@/stores/dashboard";
-import EditableCarListing, { ListingEditProps } from "./EditableCarListing";
+import EditableCarListing from "./EditableCarListing";
 
 export type ListViewType = "cards" | "list";
 
 type Props = {
   listings: CarListingType[];
-} & (
-  | {
-      allowEdit?: false;
-    }
-  | {
-      allowEdit?: true;
-      editProps: {
-        onToggleEditing: DashboardStoreState["onToggleEditing"];
-        onEdit: (
-          listing: Pick<CarListingType, "id"> & Partial<CarListingType>
-        ) => void;
-      };
-    }
-);
-const CarListingList: FC<Props> = ({ listings, ...props }) => {
+} & {
+  allowEdit?: boolean;
+  onToggleEditing?: DashboardStoreState["onToggleEditing"];
+  onEdit?: (
+    listing: Pick<CarListingType, "id"> & Partial<CarListingType>
+  ) => void;
+};
+const CarListingList: FC<Props> = ({
+  listings,
+  allowEdit,
+  onToggleEditing,
+  onEdit,
+}) => {
   // todo: optimistic listings state
   const [view, setView] = useState<ListViewType>("cards");
 
   const [editingId, setEditingId] = useState<CarListingType["id"] | null>(null);
 
-  const carListing = (listing: CarListingType) => {
-    let editProps = { allowEdit: false } as ListingEditProps;
-    if (props.allowEdit) {
-      editProps = {
-        allowEdit: true,
-        isEditing: editingId === listing.id,
-        onToggleEditing: () => {
-          setEditingId((current) =>
-            listing.id !== current ? listing.id : null
-          );
+  // const carListing = (listing: CarListingType) => {
+  //   console.log('[fn]');
 
-          props.editProps.onToggleEditing(listing.brandId);
-        },
-        onEdit: props.editProps.onEdit,
-      };
-    }
+  //   let editProps = { allowEdit: false } as ListingEditProps;
+  //   if (props.allowEdit) {
+  //     editProps = {
+  //       allowEdit: true,
+  //       isEditing: editingId === listing.id,
+  //       onToggleEditing: () => {
+  //         setEditingId((current) =>
+  //           listing.id !== current ? listing.id : null
+  //         );
 
-    return (
-      <EditableCarListing
-        listing={listing}
-        view={view}
-        armyScore={getArmyScore(listing)}
-        {...editProps}
-      />
-    );
-  };
+  //         props.editProps.onToggleEditing(listing.brandId);
+  //       },
+  //       onEdit: props.editProps.onEdit,
+  //     };
+  //   }
+
+  //   return (
+  //     <EditableCarListing
+  //       listing={listing}
+  //       view={view}
+  //       armyScore={getArmyScore(listing)}
+  //       {...editProps}
+  //     />
+  //   );
+  // };
 
   if (listings.length === 0)
     return <h3>Авто за вказаними критеріями не знайдено</h3>;
@@ -80,7 +80,21 @@ const CarListingList: FC<Props> = ({ listings, ...props }) => {
             className="grid gap-x-6 gap-y-10 md:grid-cols-2 lg:grid-cols-3"
           >
             {listings.map((l) => (
-              <li key={l.id}>{carListing(l)}</li>
+              <li key={l.id}>
+                <EditableCarListing
+                  listing={l}
+                  view={view}
+                  armyScore={getArmyScore(l)}
+                  allowEdit={allowEdit}
+                  isEditing={editingId === l.id}
+                  onToggleEditing={() => {
+                    setEditingId((current) => (l.id !== current ? l.id : null));
+
+                    onToggleEditing && onToggleEditing(l.brandId);
+                  }}
+                  onEdit={onEdit}
+                />
+              </li>
             ))}
           </motion.ul>
         )}
@@ -94,7 +108,21 @@ const CarListingList: FC<Props> = ({ listings, ...props }) => {
             className="flex flex-col gap-6"
           >
             {listings.map((l) => (
-              <li key={l.id}>{carListing(l)}</li>
+              <li key={l.id}>
+                <EditableCarListing
+                  listing={l}
+                  view={view}
+                  armyScore={getArmyScore(l)}
+                  allowEdit={allowEdit}
+                  isEditing={editingId === l.id}
+                  onToggleEditing={() => {
+                    setEditingId((current) => (l.id !== current ? l.id : null));
+
+                    onToggleEditing && onToggleEditing(l.brandId);
+                  }}
+                  onEdit={onEdit}
+                />
+              </li>
             ))}
           </motion.ul>
         )}

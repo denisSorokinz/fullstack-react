@@ -13,14 +13,7 @@ export const PUT = async (request: Request, response: Response) => {
     );
   }
 
-  console.log("[route-1]");
   const editedListing = (await request.json()) as CarListing;
-  console.log("[route-2]", editedListing);
-
-  console.log(
-    "[route-3]",
-    `${ENDPOINTS.BASE_API_LISTINGS}/${editedListing.id}`
-  );
 
   const res = await fetch(
     `${ENDPOINTS.BASE_API_LISTINGS}/${editedListing.id}`,

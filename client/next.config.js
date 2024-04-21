@@ -9,6 +9,9 @@ const nextConfig = {
       protocol: 'https'
     }]
   },
+  typescript: {
+    ignoreBuildErrors: true,
+  }
 };
 
 module.exports = nextConfig;

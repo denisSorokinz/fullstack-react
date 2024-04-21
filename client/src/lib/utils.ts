@@ -45,6 +45,41 @@ const debounce = (delay: number, fn: Function) => {
   };
 };
 
+function debounceFetcher(
+  fetcher: (...args: any[]) => Promise<any>,
+  delay = 300
+) {
+  let timeout: NodeJS.Timeout | undefined;
+  let callCbOnTimeoutEnd = false;
+  let didCallOnTimeoutEnd = false;
+
+  let prevReject: Function | null = null;
+
+  return (...args: any[]) => {
+    return new Promise<ReturnType<typeof fetcher>>((res, rej): any => {
+      callCbOnTimeoutEnd = !!timeout || didCallOnTimeoutEnd;
+      if (!timeout && !didCallOnTimeoutEnd) {
+        fetcher(...args).then((data) => res(data));
+      } else {
+        prevReject && prevReject({ error: "debounce" });
+      }
+
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        timeout = undefined;
+        if (callCbOnTimeoutEnd) fetcher(...args).then((data) => res(data));
+
+        didCallOnTimeoutEnd = true;
+        setTimeout(() => {
+          didCallOnTimeoutEnd = false;
+        }, delay);
+      }, delay);
+
+      prevReject = rej;
+    });
+  };
+}
+
 // const formValuesToQuery = (formData: SearchFormValues) => {
 //   const sanitized = sanitizeObject(formData);
 
@@ -64,4 +99,4 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export { sanitizeObject, decodeHtmlString, cn, debounce };
+export { sanitizeObject, decodeHtmlString, cn, debounce, debounceFetcher };

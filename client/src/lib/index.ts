@@ -13,7 +13,6 @@ const fetchRiaApi = async <T>(
   let url = `${ENDPOINTS.CARS_API}/${endpoint}`;
 
   const urlPathParams = endpoint.match(/(\:\w+)/g);
-  console.log({ urlPathParams });
 
   if (urlPathParams) {
     if (!pathParams || urlPathParams.length !== pathParams.length) {
@@ -26,8 +25,6 @@ const fetchRiaApi = async <T>(
     urlPathParams.forEach(
       (param, idx) => (url = url.replace(param, pathParams[idx]))
     );
-
-    console.log({ urlWithPathParams: url });
   }
 
   if (queryParams && queryParams.toString().length > 0)

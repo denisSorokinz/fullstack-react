@@ -108,7 +108,10 @@ riaApiRouter.get('/search', async (req, res) => {
 
   const listings = await prisma.listing.findMany({ where: query, take: itemsPerPage, skip: page * itemsPerPage });
 
-  const mapped = listings.map(mapListingFields);
+  const mapped = listings
+    .map(mapListingFields)
+    .map((item) => ({ ...item, images: item.images.slice(0, 10) }))
+    .slice(0, 1);
 
   res.status(200).json({ success: true, data: { listings: mapped } } as CarApiResponse<CarApiOperations.getListings>);
 });
@@ -150,12 +153,11 @@ riaApiRouter.get('/listings/:id', async (req, res) => {
 });
 
 riaApiRouter.put('/listings/:id', authGuard, validateEditListingRequest, async (req, res) => {
-  console.log('[server-edit-listing]')
-
   const params = req.params as { id: string };
   const id = Number(params.id);
 
   const nextListing = req.body as Partial<NonNullable<ListingType>>;
+  console.log('[server-edit-listing]', { id, nextListing });
 
   const listingExists = await prisma.listing.findUnique({ where: { id } });
   if (!listingExists)

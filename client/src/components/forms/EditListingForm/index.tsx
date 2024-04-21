@@ -23,33 +23,44 @@ import {
 } from "@/components/shadcn/select";
 import { Textarea } from "@/components/shadcn/textarea";
 import { validateRange } from "@/lib/filters";
+import { OnlyPropertiesLens } from "@/lib/lenses";
 import { cn } from "@/lib/utils";
 import { DashboardStoreState, useDashboardStore } from "@/stores/dashboard";
 import { FILTER_NAMES, FilterOption, FiltersType } from "@/types/filters";
 import { CarListing } from "@/types/listings";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FC, useEffect, useMemo } from "react";
+import { FC, useCallback, useEffect, useMemo } from "react";
 import { ControllerRenderProps, useForm } from "react-hook-form";
 import { ZodDate, ZodNumber, ZodOptional, ZodString, z } from "zod";
+import EditableFormItem from "./EditFormItem";
 
-type editableFields =
+export type editableFieldsType =
   | "brandId"
   | "modelId"
   | "year"
   | "mileage"
   | "price"
   | "description";
-type EditableField = {
+const editableFieldsNames = [
+  "brandId",
+  "modelId",
+  "year",
+  "mileage",
+  "price",
+  "description",
+];
+type EditableTextField = {
   type: "textarea" | "number";
   displayName: string;
 };
-type EditableSelectField = {
+export type EditableSelectField = {
   type: "select";
   displayName: string;
   dashboardStoreOptionsKey: keyof DashboardStoreState["editListingOptions"];
 };
+export type EditableField = EditableTextField | EditableSelectField;
 const editableFields: {
-  [k in editableFields]?: EditableField | EditableSelectField;
+  [k in editableFieldsType]?: EditableTextField | EditableSelectField;
 } = {
   brandId: {
     type: "select",
@@ -92,10 +103,10 @@ const getSchema = (filterData: FiltersType) =>
 export type EditListingFormData = z.infer<ReturnType<typeof getSchema>>;
 
 type Props = {
-  listing: CarListing;
-  onSubmit: (formData: EditListingFormData) => void;
+  listing: CarListing
+  onEdit: (edited: Pick<CarListing, "id"> & EditListingFormData) => void;
 };
-const EditListingForm: FC<Props> = ({ listing, onSubmit }) => {
+const EditListingForm: FC<Props> = ({ listing, onEdit }) => {
   // filterData: props or context or zodStore?
 
   const { filterData, editOptions } = useDashboardStore((store) => ({
@@ -106,137 +117,66 @@ const EditListingForm: FC<Props> = ({ listing, onSubmit }) => {
   const schema = useMemo(() => getSchema(filterData), [filterData]);
 
   // todo: set empty strings where null
+  const defaultValues = useMemo(() => {
+    const lens = OnlyPropertiesLens.from([
+      "brandId",
+      "modelId",
+      "description",
+      "mileage",
+      "price",
+      "year",
+    ] as Array<keyof EditListingFormData>);
+    const values = lens.view(listing);
+
+    return values;
+  }, []);
   const form = useForm<z.infer<typeof schema>>({
-    defaultValues: listing,
+    defaultValues,
+    mode: "onChange",
     resolver: zodResolver(schema),
   });
 
-  const { year, price, mileage, description } = form.watch();
+  const handleEdit = useCallback((formData: EditListingFormData) => {
+    console.log("editForm submitted");
+    onEdit({ id: listing.id, ...formData });
+  }, []);
+  const { description } = form.watch();
   useEffect(() => {
-    // if (mode !== SUBMIT_MODES.AUTOSAVE) return;
+    if (defaultValues.description === description) return;
 
-    if (
-      year === listing.year &&
-      price === listing.price &&
-      mileage === listing.mileage &&
-      description === listing.description
-    )
-      return;
-
-    const autosaveCb = form.handleSubmit(onSubmit);
+    const autosaveCb = form.handleSubmit(handleEdit);
     autosaveCb();
-  }, [year, price, mileage, description]);
+  }, [description]);
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {Object.keys(listing).map((field) => {
-          if (!(editableFields as any)[field]) return null;
-
-          const key = field as keyof typeof editableFields;
-          const editMetadata = editableFields[key]!;
-
-          const editableProperty = field as keyof typeof editableFields;
-
-          let input: (
-            field?: ControllerRenderProps<
-              z.infer<typeof schema>,
-              typeof editableProperty
-            >
-          ) => JSX.Element | null = () => null;
-
-          if (editMetadata.type === "select") {
-            const tMeta = editMetadata as EditableSelectField;
-            let options = editOptions[tMeta.dashboardStoreOptionsKey];
-            if (!Array.isArray(options) && options.get(listing.brandId))
-              options = options.get(listing.brandId)!;
-
-            let content: JSX.Element;
-            let disabled = true;
-            if ((options as FilterOption[]).length === 0)
-              content = <span>0 опцiй</span>;
-
-            if ((options as FilterOption[]).length > 0) {
-              disabled = false;
-              content = (
-                <>
-                  {(options as FilterOption[]).map((opt) => (
-                    <SelectItem key={opt.id} value={`${opt.id}`}>
-                      {opt.name}
-                    </SelectItem>
-                  ))}
-                </>
-              );
-            }
-
-            input = () => (
-              <Select
-                disabled={disabled}
-                onValueChange={() => {
-                  // todo: handle change
-                }}
-                value={`${listing[editableProperty]}`}
-              >
-                <SelectTrigger className="w-[280px] dark:text-slate-700">
-                  <SelectValue
-                    className="dark:text-slate-700"
-                    placeholder={`${editMetadata.displayName}...`}
-                  />
-                </SelectTrigger>
-                <SelectContent>{content}</SelectContent>
-              </Select>
-            );
-          }
-
-          if (editMetadata.type === "number") {
-            let min: number;
-            let max: number;
-
-            const filter = Object.values(filterData).find(
-              (filter) => filter.slug === editableProperty
-            );
-            if (filter?.type === "range") {
-              min = filter.from;
-              max = filter.to;
-            }
-
-            input = (field) => (
-              <Input
-                placeholder={`${editMetadata.displayName}...`}
-                type={editMetadata.type}
-                min={min}
-                max={max}
-                {...field}
-              />
-            );
-          }
-
-          if (editMetadata.type === "textarea") {
-            input = (field) => {
-              let rows;
-              if (field && field.value && typeof field.value === "string")
-                rows = 10;
-
-              return <Textarea rows={rows} {...field} />;
-            };
-          }
-
-          return (
-            <FormField
-              key={field}
-              control={form.control}
-              name={editableProperty}
-              render={({ field }) => (
-                <FormItem
-                  className={cn(noFlipClassName, "dark:text-slate-700")}
-                >
-                  <FormLabel>{editMetadata.displayName}</FormLabel>
-                  <FormControl>{input(field)}</FormControl>
-                </FormItem>
-              )}
-            ></FormField>
-          );
+      <form
+        onSubmit={form.handleSubmit(handleEdit, (err) => {
+          console.log("edit form validation errors:", err);
         })}
+        className="space-y-6"
+      >
+        <FormField
+          key={`field-description`}
+          control={form.control}
+          name={"description"}
+          render={({ field: { ref, ...field } }) => (
+            <EditableFormItem
+              field={field}
+              ref={ref}
+              brandId={defaultValues.brandId}
+              fieldMeta={editableFields["description"]!}
+              name={"description"}
+              className={cn(noFlipClassName, "dark:text-slate-700")}
+            />
+            // <FormItem
+            //   className={cn(noFlipClassName, "dark:text-slate-700")}
+            // >
+            //   <FormLabel>{editMetadata.displayName}</FormLabel>
+            //   <FormControl>{input}</FormControl>
+            // </FormItem>
+          )}
+        ></FormField>
         <Button
           type="submit"
           className={cn(

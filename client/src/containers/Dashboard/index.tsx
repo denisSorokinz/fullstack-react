@@ -3,24 +3,50 @@
 import CarListingList from "@/components/carListings/List";
 import SearchForm from "@/components/forms/SearchForm";
 import { FilterValuesType, FiltersType } from "@/types/filters";
-import { FC, useCallback, useContext, useEffect, useState } from "react";
+import {
+  FC,
+  useCallback,
+  useContext,
+  useEffect,
+  useOptimistic,
+  useState,
+  useTransition,
+} from "react";
 import { CarListing } from "@/types/listings";
 import { fetchCarListings, fetchFilters } from "@/lib";
-import { debounce } from "@/lib/utils";
+import { debounce, debounceFetcher } from "@/lib/utils";
 import { createDashboardStore, useDashboardStore } from "@/stores/dashboard";
 import { updateListing } from "@/lib/actions";
 import useEditableList from "@/hooks/useEditableList";
+import { EditListingFormData } from "@/components/forms/EditListingForm";
+
+const updateEntry = <T extends { id: number }>(
+  state: Array<T>,
+  nextEntry: Partial<T>
+) => {
+  const existingIdx = state.findIndex((item) => item.id === nextEntry.id);
+
+  if (existingIdx === -1) return state;
+
+  const nextState = [...state];
+  const entryCopy = { ...nextState[existingIdx] };
+  nextState[existingIdx] = { ...entryCopy, ...nextEntry };
+
+  return nextState;
+};
 
 type Props = {
   initialFilters: FilterValuesType;
 };
 const DashboardContent: FC<Props> = ({ initialFilters }) => {
-  const dashboardStore = useDashboardStore((store) => store);
+  const { listings, setListings, ...dashboardStore } = useDashboardStore(
+    (store) => store
+  );
 
   // filter form
   const handleSubmit = async (filters: Partial<FilterValuesType>) => {
     const nextListings = await fetchCarListings(filters);
-    dashboardStore.setListings(nextListings!);
+    setListings(nextListings!);
   };
   const handleChange = useCallback(
     debounce(
@@ -32,7 +58,7 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
         }
 
         const nextListings = await fetchCarListings(filters);
-        dashboardStore.setListings(nextListings!);
+        setListings(nextListings!);
       }
     ),
     []
@@ -42,62 +68,30 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
     dashboardStore.setFilterData(nextFilterData!);
 
     const nextListings = await fetchCarListings();
-    dashboardStore.setListings(nextListings!);
+    setListings(nextListings!);
+  };
+
+  const serverAction = useCallback(debounceFetcher(updateListing), []);
+  const updateCb = async (
+    edited: Pick<CarListing, "id"> & Partial<CarListing>
+  ) => {
+    try {
+      const { success, listing } = await serverAction(edited);
+      console.log(success);
+
+      if (!(success && listing)) return false;
+
+      const nextListings = updateEntry(listings, edited);
+      setListings(nextListings);
+
+      return true;
+    } catch (err: any) {
+      return false;
+    }
   };
 
   // edit listings
-  const { uiList, updateListEntry } = useEditableList<CarListing>(
-    dashboardStore.listings,
-    async (edited: Pick<CarListing, "id"> & Partial<CarListing>) => {
-      const editedIdx = dashboardStore.listings.findIndex(
-        (l) => l.id === edited.id
-      );
-      console.log("edit start", {
-        edited,
-        editedIdx,
-        item: dashboardStore.listings[editedIdx],
-      });
-      if (editedIdx === -1) return false;
-
-      console.log("before-fetch");
-      const res = await updateListing(edited);
-      console.log("after-fetch", { res });
-      // if (!(res && res.success)) return false;
-
-      const nextListingList = [...dashboardStore.listings];
-      // console.log({ editedListing: res.listing });
-      nextListingList.splice(editedIdx, 1, {
-        ...dashboardStore.listings[editedIdx],
-        ...edited,
-      } as any);
-      dashboardStore.setListings(nextListingList);
-
-      return true;
-    }
-  );
-  // const handleEditListing = async (
-  //   edited: Pick<CarListing, "id"> & Partial<CarListing>
-  // ) => {
-  //   const editedIdx = dashboardStore.listings.findIndex(
-  //     (l) => l.id === edited.id
-  //   );
-  //   if (editedIdx === -1) return;
-
-  //   const res = await updateListing(edited);
-  //   if (!(res && res.success)) return;
-
-  //   const nextListingList = [...dashboardStore.listings];
-  //   console.log({ editedListing: res.listing });
-  //   nextListingList.splice(editedIdx, 1, res.listing!);
-  //   dashboardStore.setListings(nextListingList);
-  // };
-
-  useEffect(() => {
-    console.log("lists:", {
-      listings: dashboardStore.listings[0],
-      uiList: uiList[0],
-    });
-  }, [dashboardStore.listings, uiList]);
+  const { uiList, updateListEntry } = useEditableList(listings, updateCb);
 
   return (
     <div className="flex gap-8">
@@ -115,10 +109,8 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
         <CarListingList
           listings={uiList}
           allowEdit={true}
-          editProps={{
-            onToggleEditing: dashboardStore.onToggleEditing,
-            onEdit: updateListEntry,
-          }}
+          onToggleEditing={dashboardStore.onToggleEditing}
+          onEdit={updateListEntry}
         />
       </div>
     </div>

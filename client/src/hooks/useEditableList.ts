@@ -11,7 +11,8 @@ const updateEntry = <T extends { id: number }>(
   if (existingIdx === -1) return state;
 
   const nextState = [...state];
-  nextState[existingIdx] = { ...nextState[existingIdx], ...nextEntry };
+  const entryCopy = { ...nextState[existingIdx] };
+  nextState[existingIdx] = { ...entryCopy, ...nextEntry };
 
   return nextState;
 };

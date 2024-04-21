@@ -101,7 +101,6 @@ const updateListing = async (
 
   const token = cookies().get("accessToken")!.value;
 
-  console.log("[server-action-1]");
   const res = await fetch(`${ENDPOINTS.BASE_NEXT_LISTINGS}`, {
     method: "PUT",
     headers: { Authorization: `Bearer ${token}` },
@@ -109,16 +108,14 @@ const updateListing = async (
   });
   const json =
     (await res.json()) as CarApiResponse<CarApiOperations.updateListing>;
-  console.log("[server-action-2]", json);
 
   if (!json.success) return { ...json };
 
-  if (json.success) {
-    return {
-      success: true,
-      listing: json.data[CarApiOperations.updateListing]!,
-    };
-  }
+  await new Promise((res) => void setTimeout(res, 3000));
+  return {
+    success: true,
+    listing: json.data[CarApiOperations.updateListing]!,
+  };
 };
 
 export { authenticate, logout, isAuthenticated, updateListing };
