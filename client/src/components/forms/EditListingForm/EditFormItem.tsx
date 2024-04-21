@@ -2,7 +2,7 @@
 
 import { FormControl, FormItem, FormLabel } from "@/components/shadcn/form";
 import { cn } from "@/lib/utils";
-import { FC, forwardRef } from "react";
+import { FC, forwardRef, memo, useEffect } from "react";
 import {
   EditListingFormData,
   EditableField,
@@ -20,7 +20,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@radix-ui/react-select";
+} from "@/components/shadcn/select";
+import EditSelect from "./EditSelect";
 
 type Props = {
   field: Omit<ControllerRenderProps<EditListingFormData>, "ref">;
@@ -32,6 +33,8 @@ type Props = {
 
 const EditableFormItem = forwardRef<HTMLDivElement, Props>(
   ({ field, fieldMeta, name, className, brandId }, ref) => {
+    console.log("formitem render");
+
     const { filterData, editOptions } = useDashboardStore((store) => ({
       filterData: store.filterData!,
       editOptions: store.editListingOptions,
@@ -40,43 +43,15 @@ const EditableFormItem = forwardRef<HTMLDivElement, Props>(
     let input: JSX.Element = <></>;
 
     if (fieldMeta.type === "select") {
-      const tMeta = fieldMeta as EditableSelectField;
-      let options = editOptions[tMeta.dashboardStoreOptionsKey];
-      if (!Array.isArray(options) && options.get(brandId))
-        options = options.get(brandId)!;
-
-      let content: JSX.Element = <></>;
-      let disabled = true;
-      if ((options as FilterOption[]).length === 0)
-        content = <span>0 опцiй</span>;
-
-      if ((options as FilterOption[]).length > 0) {
-        disabled = false;
-        content = (
-          <>
-            {(options as FilterOption[]).map((opt) => (
-              <SelectItem key={opt.id} value={`${opt.id}`}>
-                {opt.name}
-              </SelectItem>
-            ))}
-          </>
-        );
-      }
-
       input = (
-        <Select
-          disabled={disabled}
-          onValueChange={field.onChange}
-          defaultValue={`${field.value}`}
-        >
-          <SelectTrigger className="w-[280px] dark:text-slate-700">
-            <SelectValue
-              className="dark:text-slate-700"
-              placeholder={`${fieldMeta.displayName}...`}
-            />
-          </SelectTrigger>
-          <SelectContent>{content}</SelectContent>
-        </Select>
+        <EditSelect
+          fieldMeta={fieldMeta}
+          onChange={field.onChange}
+          value={`${field.value}`}
+          placeholder="test"
+          key={fieldMeta.displayName}
+          parentValue={79}
+        />
       );
     }
 
@@ -117,4 +92,4 @@ const EditableFormItem = forwardRef<HTMLDivElement, Props>(
   }
 );
 
-export default EditableFormItem;
+export default memo(EditableFormItem, () => true);

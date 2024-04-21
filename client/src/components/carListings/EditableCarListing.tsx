@@ -81,7 +81,7 @@ const EditableCarListing: FC<Props> = ({
       }
       back={
         <div className={cn(flipClassName, "cursor-pointer")}>
-          <EditListingForm listing={listing} onEdit={onEdit as any} />
+          <EditListingForm defaultValues={formDefaultValues} onEdit={onEdit as any} />
         </div>
       }
     />
