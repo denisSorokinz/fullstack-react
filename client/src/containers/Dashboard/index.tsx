@@ -2,23 +2,14 @@
 
 import CarListingList from "@/components/carListings/List";
 import SearchForm from "@/components/forms/SearchForm";
-import { FilterValuesType, FiltersType } from "@/types/filters";
-import {
-  FC,
-  useCallback,
-  useContext,
-  useEffect,
-  useOptimistic,
-  useState,
-  useTransition,
-} from "react";
+import { FilterValuesType } from "@/types/filters";
+import { FC, useCallback } from "react";
 import { CarListing } from "@/types/listings";
 import { fetchCarListings, fetchFilters } from "@/lib";
 import { debounce, debounceFetcher } from "@/lib/utils";
-import { createDashboardStore, useDashboardStore } from "@/stores/dashboard";
+import { useDashboardStore } from "@/stores/dashboard";
 import { updateListing } from "@/lib/actions";
 import useEditableList from "@/hooks/useEditableList";
-import { EditListingFormData } from "@/components/forms/EditListingForm";
 
 const updateEntry = <T extends { id: number }>(
   state: Array<T>,

@@ -1,3 +1,5 @@
+import { EditableField } from "@/types/forms";
+
 enum FILTER_NAMES {
   "BRAND" = "BRAND",
   "MODEL" = "MODEL",
@@ -8,10 +10,10 @@ enum FILTER_NAMES {
 
 // AUTH
 enum AUTH_OPERATIONS {
-  'LOGIN' = 'login',
-  'SIGN_UP' = 'signup',
-  'LOGOUT' = 'logout',
-  'REFRESH_TOKEN' = 'refreshToken'
+  "LOGIN" = "login",
+  "SIGN_UP" = "signup",
+  "LOGOUT" = "logout",
+  "REFRESH_TOKEN" = "refreshToken",
 }
 
 // Filters query params
@@ -41,15 +43,50 @@ const ENDPOINTS = {
     GET_MODELS_BY_BRAND: "brands/:brandId/models",
   },
   MUTATIONS: {
-    UPDATE_LISTING: "listings/:listingId"
+    UPDATE_LISTING: "listings/:listingId",
   },
   AUTH: {
     BASE_NEXT_AUTH: `${BASE_NEXT_URL}/auth`,
     [AUTH_OPERATIONS.LOGIN]: `${BASE_API_URL}/auth/login`,
     [AUTH_OPERATIONS.SIGN_UP]: `${BASE_API_URL}/auth/signup`,
     [AUTH_OPERATIONS.REFRESH_TOKEN]: `${BASE_API_URL}/auth/refreshAccessToken`,
-  }
+  },
 };
 
+// Listing editable fields
+const editableListingFields = {
+  brandId: {
+    type: "select",
+    displayName: "Марка",
+    dashboardStoreOptionsKey: "brands",
+  },
+  modelId: {
+    type: "select",
+    displayName: "Модель",
+    dashboardStoreOptionsKey: "models",
+  },
+  year: {
+    type: "number",
+    displayName: "Рiк",
+  },
+  mileage: {
+    type: "number",
+    displayName: "Пробiг",
+  },
+  price: {
+    type: "number",
+    displayName: "Цiна",
+  },
+  description: {
+    type: "textarea",
+    displayName: "Iнформацiя",
+  },
+} satisfies Record<string, EditableField>;
 
-export { FILTER_NAMES, ENDPOINTS, FILTER_SLUGS, AUTH_OPERATIONS };
+export {
+  FILTER_NAMES,
+  ENDPOINTS,
+  FILTER_SLUGS,
+  AUTH_OPERATIONS,
+  editableListingFields,
+};

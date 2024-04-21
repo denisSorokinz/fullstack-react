@@ -10,10 +10,8 @@ import {
   FC,
   PropsWithChildren,
   createContext,
-  useContext,
   useRef,
 } from "react";
-import { useStore } from "zustand";
 
 export const DashboardContext = createContext<DashboardStore | null>(null);
 
@@ -25,8 +23,6 @@ export const DashboardProvider: FC<PropsWithChildren<ProviderProps>> = ({
   const store = useRef<DashboardStore>(null);
   if (!store.current) (store as any).current = createDashboardStore(initProps);
 
-  console.log('store created:', store.current?.getState(), {initProps});
-  
   return (
     <DashboardContext.Provider value={store.current}>
       {children}

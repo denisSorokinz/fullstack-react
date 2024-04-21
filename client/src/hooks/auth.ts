@@ -6,8 +6,6 @@ const useAuthStatus = () => {
   const [isAuthed, setIsAuthenticated] = useState(false);
   const invalidateSession = useAuthStore((state) => state.invalidateSession);
 
-  console.log({ isAuthed });
-
   useEffect(() => {
     const cb = async () => {
       const nextIsAuthed = await isAuthenticated();

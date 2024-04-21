@@ -111,7 +111,7 @@ riaApiRouter.get('/search', async (req, res) => {
   const mapped = listings
     .map(mapListingFields)
     .map((item) => ({ ...item, images: item.images.slice(0, 10) }))
-    .slice(0, 1);
+    // .slice(0, 1);
 
   res.status(200).json({ success: true, data: { listings: mapped } } as CarApiResponse<CarApiOperations.getListings>);
 });

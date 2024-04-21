@@ -1,4 +1,4 @@
-import { FC, useEffect, useMemo } from "react";
+import { FC, useMemo } from "react";
 import CarListing, { CarListingProps } from "./CarListing";
 import FlipBox, { flipClassName } from "../FlipBox";
 import { CarListing as CarListingType } from "@/types/listings";
@@ -7,18 +7,6 @@ import { Pen } from "../icons";
 import EditListingForm, { EditListingFormData } from "../forms/EditListingForm";
 import { OnlyPropertiesLens } from "@/lib/lenses";
 
-// export type ListingEditProps =
-//   | {
-//       allowEdit: false;
-//     }
-//   | {
-//       allowEdit: true;
-//       isEditing: boolean;
-//       onToggleEditing: (listing: CarListingType) => void;
-//       onEdit: (
-//         listing: Pick<CarListingType, "id"> & Partial<CarListingType>
-//       ) => void;
-//     };
 type Props = CarListingProps & {
   allowEdit?: boolean;
   isEditing?: boolean;
@@ -54,7 +42,10 @@ const EditableCarListing: FC<Props> = ({
       "price",
       "year",
     ] as Array<keyof EditListingFormData>);
-    const values = lens.view(listing);
+    const values = lens.view(listing) as Pick<
+      CarListingType,
+      "brandId" | "modelId" | "description" | "mileage" | "price" | "year"
+    >;
 
     return values;
   }, []);
@@ -81,7 +72,10 @@ const EditableCarListing: FC<Props> = ({
       }
       back={
         <div className={cn(flipClassName, "cursor-pointer")}>
-          <EditListingForm defaultValues={formDefaultValues} onEdit={onEdit as any} />
+          <EditListingForm
+            defaultValues={formDefaultValues}
+            onEdit={handleEdit}
+          />
         </div>
       }
     />

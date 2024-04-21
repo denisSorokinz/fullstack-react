@@ -5,11 +5,8 @@ import { cn } from "@/lib/utils";
 import { FC, forwardRef, memo, useEffect } from "react";
 import {
   EditListingFormData,
-  EditableField,
-  EditableSelectField,
-  editableFieldsType,
 } from ".";
-import { ControllerRenderProps } from "react-hook-form";
+import { Control, ControllerRenderProps } from "react-hook-form";
 import { Textarea } from "@/components/shadcn/textarea";
 import { useDashboardStore } from "@/stores/dashboard";
 import { Input } from "@/components/shadcn/input";
@@ -22,35 +19,35 @@ import {
   SelectValue,
 } from "@/components/shadcn/select";
 import EditSelect from "./EditSelect";
+import { EditableField } from "@/types/forms";
+import { editableListingFields } from "@/constants";
 
 type Props = {
   field: Omit<ControllerRenderProps<EditListingFormData>, "ref">;
   fieldMeta: EditableField;
-  name: editableFieldsType;
+  name: keyof typeof editableListingFields;
   className?: string;
-  brandId: number;
+  parentValue?: number;
+  control: Control<EditListingFormData>
 };
 
-const EditableFormItem = forwardRef<HTMLDivElement, Props>(
-  ({ field, fieldMeta, name, className, brandId }, ref) => {
-    console.log("formitem render");
-
-    const { filterData, editOptions } = useDashboardStore((store) => ({
+const EditFormField = forwardRef<HTMLElement, Props>(
+  ({ field, fieldMeta, name, className, parentValue }, ref) => {
+    const { filterData } = useDashboardStore((store) => ({
       filterData: store.filterData!,
-      editOptions: store.editListingOptions,
     }));
 
     let input: JSX.Element = <></>;
 
     if (fieldMeta.type === "select") {
+      console.log({ name, value: field.value })
       input = (
         <EditSelect
+          key={`${name}-select`}
+          value={field.value as number}
+          parentValue={parentValue}
           fieldMeta={fieldMeta}
           onChange={field.onChange}
-          value={`${field.value}`}
-          placeholder="test"
-          key={fieldMeta.displayName}
-          parentValue={79}
         />
       );
     }
@@ -92,4 +89,4 @@ const EditableFormItem = forwardRef<HTMLDivElement, Props>(
   }
 );
 
-export default memo(EditableFormItem, () => true);
+export default EditFormField;

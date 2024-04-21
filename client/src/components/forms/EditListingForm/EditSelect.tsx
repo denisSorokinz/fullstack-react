@@ -1,21 +1,18 @@
 import React, { FC, memo } from "react";
-import { EditableSelectField } from ".";
-import { Select, SelectItem, SelectTrigger } from "@radix-ui/react-select";
 import { FilterOption } from "@/types/filters";
 import { useDashboardStore } from "@/stores/dashboard";
-import { SelectContent, SelectValue } from "@/components/shadcn/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/shadcn/select";
+import { EditableSelectField } from "@/types/forms";
 
 type Props = {
   onChange: (...event: any[]) => void;
-  value: string;
-  placeholder: string;
+  value: FilterOption['id'];
   fieldMeta: EditableSelectField;
   parentValue?: number;
 };
 const EditSelect: FC<Props> = ({
   onChange,
   value,
-  placeholder,
   fieldMeta,
   parentValue: brandId,
 }) => {
@@ -23,9 +20,9 @@ const EditSelect: FC<Props> = ({
     editOptions: store.editListingOptions,
   }));
 
-  const tMeta = fieldMeta as EditableSelectField;
-  let options = editOptions[tMeta.dashboardStoreOptionsKey];
-  if (!Array.isArray(options)) options = options.get(brandId || -1)! || [];
+  let options = editOptions[fieldMeta.dashboardStoreOptionsKey];
+  
+  if (!Array.isArray(options)) options = options.get(brandId || -1) || [];
 
   let content: JSX.Element = <></>;
   let disabled = true;
@@ -50,7 +47,7 @@ const EditSelect: FC<Props> = ({
       onValueChange={onChange}
       defaultValue={`${value}`}
     >
-      <SelectTrigger className="w-[280px] dark:text-slate-700">
+      <SelectTrigger className="dark:text-slate-700">
         <SelectValue
           className="dark:text-slate-700"
           placeholder={`${fieldMeta.displayName}...`}

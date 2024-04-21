@@ -1,16 +1,12 @@
 "use client";
 
-import { FC, useCallback, useEffect, useState } from "react";
-import CarListing from "@/components/carListings/CarListing";
+import { FC, useState } from "react";
 import { type CarListing as CarListingType } from "@/types/listings";
 import ViewSwitcher from "./ViewSwitcher";
 import { motion, AnimatePresence } from "framer-motion";
-import FlipBox, { flipClassName } from "../FlipBox";
-import { cn } from "@/lib/utils";
-import { fetchBrands, fetchModelsByBrand, getArmyScore } from "@/lib";
-import { Helmet, Pen } from "../icons";
-import { DashboardStoreState, useDashboardStore } from "@/stores/dashboard";
+import { DashboardStoreState,  } from "@/stores/dashboard";
 import EditableCarListing from "./EditableCarListing";
+import { getArmyScore } from "@/lib";
 
 export type ListViewType = "cards" | "list";
 
@@ -29,39 +25,9 @@ const CarListingList: FC<Props> = ({
   onToggleEditing,
   onEdit,
 }) => {
-  // todo: optimistic listings state
   const [view, setView] = useState<ListViewType>("cards");
 
   const [editingId, setEditingId] = useState<CarListingType["id"] | null>(null);
-
-  // const carListing = (listing: CarListingType) => {
-  //   console.log('[fn]');
-
-  //   let editProps = { allowEdit: false } as ListingEditProps;
-  //   if (props.allowEdit) {
-  //     editProps = {
-  //       allowEdit: true,
-  //       isEditing: editingId === listing.id,
-  //       onToggleEditing: () => {
-  //         setEditingId((current) =>
-  //           listing.id !== current ? listing.id : null
-  //         );
-
-  //         props.editProps.onToggleEditing(listing.brandId);
-  //       },
-  //       onEdit: props.editProps.onEdit,
-  //     };
-  //   }
-
-  //   return (
-  //     <EditableCarListing
-  //       listing={listing}
-  //       view={view}
-  //       armyScore={getArmyScore(listing)}
-  //       {...editProps}
-  //     />
-  //   );
-  // };
 
   if (listings.length === 0)
     return <h3>Авто за вказаними критеріями не знайдено</h3>;

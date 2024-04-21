@@ -2,28 +2,8 @@
 
 import { noFlipClassName } from "@/components/FlipBox";
 import { Button } from "@/components/shadcn/button";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/shadcn/form";
-import { Input } from "@/components/shadcn/input";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/shadcn/select";
-import { Textarea } from "@/components/shadcn/textarea";
+import { Form, FormField } from "@/components/shadcn/form";
 import { validateRange } from "@/lib/filters";
-import { OnlyPropertiesLens } from "@/lib/lenses";
 import { cn } from "@/lib/utils";
 import { DashboardStoreState, useDashboardStore } from "@/stores/dashboard";
 import { FILTER_NAMES, FilterOption, FiltersType } from "@/types/filters";
@@ -32,63 +12,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { FC, memo, useCallback, useEffect, useMemo, useRef } from "react";
 import { ControllerRenderProps, useForm } from "react-hook-form";
 import { ZodDate, ZodNumber, ZodOptional, ZodString, z } from "zod";
-import EditableFormItem from "./EditFormItem";
-
-export type editableFieldsType =
-  | "brandId"
-  | "modelId"
-  | "year"
-  | "mileage"
-  | "price"
-  | "description";
-const editableFieldsNames = [
-  "description",
-  'year',
-  'mileage',
-  'price',
-  'brandId',
-  'modelId'
-];
-type EditableTextField = {
-  type: "textarea" | "number";
-  displayName: string;
-};
-export type EditableSelectField = {
-  type: "select";
-  displayName: string;
-  dashboardStoreOptionsKey: keyof DashboardStoreState["editListingOptions"];
-};
-export type EditableField = EditableTextField | EditableSelectField;
-const editableFields: {
-  [k in editableFieldsType]?: EditableTextField | EditableSelectField;
-} = {
-  brandId: {
-    type: "select",
-    displayName: "Марка",
-    dashboardStoreOptionsKey: "brands",
-  },
-  modelId: {
-    type: "select",
-    displayName: "Модель",
-    dashboardStoreOptionsKey: "models",
-  },
-  year: {
-    type: "number",
-    displayName: "Рiк",
-  },
-  mileage: {
-    type: "number",
-    displayName: "Пробiг",
-  },
-  price: {
-    type: "number",
-    displayName: "Цiна",
-  },
-  description: {
-    type: "textarea",
-    displayName: "Iнформацiя",
-  },
-};
+import EditFormField from "./EditFormField";
+import { editableListingFields } from "@/constants";
 
 const getSchema = (filterData: FiltersType) =>
   z.object({
@@ -102,35 +27,8 @@ const getSchema = (filterData: FiltersType) =>
   });
 export type EditListingFormData = z.infer<ReturnType<typeof getSchema>>;
 
-const TestCmp = memo(
-  ({ fieldName }: { fieldName: editableFieldsType }) => (
-    <FormField
-      key={`field-${fieldName}`}
-      // control={form.control}
-      name={fieldName as editableFieldsType}
-      render={({ field: { ref, ...field } }) => (
-        <EditableFormItem
-          field={field}
-          ref={ref}
-          brandId={79}
-          fieldMeta={editableFields[fieldName] as any}
-          name={fieldName as editableFieldsType}
-          className={cn(noFlipClassName, "dark:text-slate-700")}
-        />
-        // <FormItem
-        //   className={cn(noFlipClassName, "dark:text-slate-700")}
-        // >
-        //   <FormLabel>{editMetadata.displayName}</FormLabel>
-        //   <FormControl>{input}</FormControl>
-        // </FormItem>
-      )}
-    ></FormField>
-  ),
-  () => true
-);
-
 type Props = {
-  listingId?: number,
+  listingId?: number;
   defaultValues: Pick<
     CarListing,
     "brandId" | "modelId" | "description" | "mileage" | "price" | "year"
@@ -138,8 +36,6 @@ type Props = {
   onEdit: (edited: Pick<CarListing, "id"> & EditListingFormData) => void;
 };
 const EditListingForm: FC<Props> = ({ defaultValues, onEdit }) => {
-  // filterData: props or context or zodStore?
-
   const { filterData, editOptions } = useDashboardStore((store) => ({
     filterData: store.filterData!,
     editOptions: store.editListingOptions,
@@ -157,6 +53,7 @@ const EditListingForm: FC<Props> = ({ defaultValues, onEdit }) => {
     console.log("editForm submitted");
     onEdit({ id: 34346721, ...formData });
   }, []);
+
   const { description } = form.watch();
   useEffect(() => {
     if (defaultValues.description === description) return;
@@ -165,32 +62,29 @@ const EditListingForm: FC<Props> = ({ defaultValues, onEdit }) => {
     autosaveCb();
   }, [description]);
 
-  const mapped = useMemo(() => {
-    console.log("list-render");
+  const fields = useMemo(() => {
+    return Object.keys(editableListingFields).map((fieldName) => {
+      const key = fieldName as keyof typeof editableListingFields
 
-    return editableFieldsNames.map((fieldName: any) => (
-      <FormField
-        key={`field-${fieldName}`}
-        control={form.control}
-        name={fieldName}
-        render={({ field: { ref, ...field } }) => (
-          <EditableFormItem
-            field={field}
-            ref={ref}
-            brandId={defaultValues.brandId}
-            fieldMeta={(editableFields[fieldName] as any)!}
-            name={fieldName}
-            className={cn(noFlipClassName, "dark:text-slate-700")}
-          />
-          // <FormItem
-          //   className={cn(noFlipClassName, "dark:text-slate-700")}
-          // >
-          //   <FormLabel>{editMetadata.displayName}</FormLabel>
-          //   <FormControl>{input}</FormControl>
-          // </FormItem>
-        )}
-      ></FormField>
-    ));
+      return (
+        <FormField
+          key={`field-${fieldName}`}
+          control={form.control}
+          name={key}
+          render={({ field: { ref, ...field } }) => (
+            <EditFormField
+              control={form.control}
+              field={field}
+              ref={ref}
+              parentValue={defaultValues.brandId}
+              fieldMeta={(editableListingFields[key] as any)!}
+              name={key}
+              className={cn(noFlipClassName, "dark:text-slate-700")}
+            />
+          )}
+        ></FormField>
+      );
+    });
   }, []);
 
   return (
@@ -201,28 +95,7 @@ const EditListingForm: FC<Props> = ({ defaultValues, onEdit }) => {
         })}
         className="space-y-6"
       >
-        {mapped}
-        {/* <FormField
-          key={`field-description`}
-          control={form.control}
-          name={"description"}
-          render={({ field: { ref, ...field } }) => (
-            <EditableFormItem
-              field={field}
-              ref={ref}
-              brandId={defaultValues.brandId}
-              fieldMeta={editableFields["description"]!}
-              name={"description"}
-              className={cn(noFlipClassName, "dark:text-slate-700")}
-            />
-            // <FormItem
-            //   className={cn(noFlipClassName, "dark:text-slate-700")}
-            // >
-            //   <FormLabel>{editMetadata.displayName}</FormLabel>
-            //   <FormControl>{input}</FormControl>
-            // </FormItem>
-          )}
-        ></FormField> */}
+        {fields}
         <Button
           type="submit"
           className={cn(
@@ -237,4 +110,4 @@ const EditListingForm: FC<Props> = ({ defaultValues, onEdit }) => {
   );
 };
 
-export default memo(EditListingForm, () => true)
+export default EditListingForm;
