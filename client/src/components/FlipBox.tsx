@@ -1,6 +1,6 @@
 "use client";
 
-import { FC, useEffect, useRef } from "react";
+import { FC, memo, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 export const flipClassName = "should-3d-flip";
@@ -102,4 +102,8 @@ const FlipBox: FC<Props> = ({
   );
 };
 
-export default FlipBox;
+export default memo(
+  FlipBox,
+  (prev, next) =>
+    prev.isFlipped === next.isFlipped
+);

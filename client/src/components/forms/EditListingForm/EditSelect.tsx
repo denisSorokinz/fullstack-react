@@ -1,12 +1,19 @@
-import React, { FC, memo } from "react";
+import React, { FC, memo, useMemo } from "react";
 import { FilterOption } from "@/types/filters";
 import { useDashboardStore } from "@/stores/dashboard";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/shadcn/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/shadcn/select";
 import { EditableSelectField } from "@/types/forms";
+import { CarListing } from "@/types/listings";
 
 type Props = {
   onChange: (...event: any[]) => void;
-  value: FilterOption['id'];
+  value: FilterOption["id"];
   fieldMeta: EditableSelectField;
   parentValue?: number;
 };
@@ -20,9 +27,18 @@ const EditSelect: FC<Props> = ({
     editOptions: store.editListingOptions,
   }));
 
-  let options = editOptions[fieldMeta.dashboardStoreOptionsKey];
-  
-  if (!Array.isArray(options)) options = options.get(brandId || -1) || [];
+  const options = useMemo(() => {
+    let optns = editOptions[fieldMeta.dashboardStoreOptionsKey];
+
+    if (!Array.isArray(optns)) {
+      optns =
+        (optns as Map<CarListing["brandId"], FilterOption[]>).get(
+          brandId || -1
+        ) || [];
+    }
+
+    return optns;
+  }, [editOptions, brandId]);
 
   let content: JSX.Element = <></>;
   let disabled = true;
@@ -60,6 +76,8 @@ const EditSelect: FC<Props> = ({
 
 export default memo(
   EditSelect,
-  ({ parentValue: prevValue }, { parentValue: nextValue }) =>
-    prevValue === nextValue
+  (
+    { parentValue: prevParentValue, value: prevValue },
+    { parentValue: nextParentValue, value: nextValue }
+  ) => prevParentValue === nextParentValue && prevValue === nextValue
 );

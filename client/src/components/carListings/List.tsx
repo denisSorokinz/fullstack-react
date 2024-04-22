@@ -1,10 +1,10 @@
 "use client";
 
-import { FC, useState } from "react";
+import { FC, useMemo, useState } from "react";
 import { type CarListing as CarListingType } from "@/types/listings";
 import ViewSwitcher from "./ViewSwitcher";
 import { motion, AnimatePresence } from "framer-motion";
-import { DashboardStoreState,  } from "@/stores/dashboard";
+import { DashboardStoreState } from "@/stores/dashboard";
 import EditableCarListing from "./EditableCarListing";
 import { getArmyScore } from "@/lib";
 
@@ -14,24 +14,48 @@ type Props = {
   listings: CarListingType[];
 } & {
   allowEdit?: boolean;
+  editingId?: number | null;
   onToggleEditing?: DashboardStoreState["onToggleEditing"];
   onEdit?: (
     listing: Pick<CarListingType, "id"> & Partial<CarListingType>
   ) => void;
+  onDelete?: (listingId: CarListingType["id"]) => void;
 };
 const CarListingList: FC<Props> = ({
   listings,
   allowEdit,
+  editingId,
   onToggleEditing,
   onEdit,
+  onDelete
 }) => {
   const [view, setView] = useState<ListViewType>("cards");
-
-  const [editingId, setEditingId] = useState<CarListingType["id"] | null>(null);
 
   if (listings.length === 0)
     return <h3>Авто за вказаними критеріями не знайдено</h3>;
 
+  // todo: refactor
+  // const listingsJsx = useMemo(
+  //   () =>
+  //     listings.map((l) => (
+  //       <li key={l.id}>
+  //         <EditableCarListing
+  //           listing={l}
+  //           view={view}
+  //           isEditing={editingId === l.id}
+  //           armyScore={getArmyScore(l)}
+  //           allowEdit={allowEdit}
+  //           onToggleEditing={() => {
+  //             onToggleEditing && onToggleEditing(l);
+  //           }}
+  //           onEdit={onEdit}
+  //         />
+  //       </li>
+  //     )),
+  //   [listings, allowEdit, editingId]
+  // );
+
+  // todo: refactor
   return (
     <div className="flex flex-col gap-2">
       <ViewSwitcher view={view} setView={setView} />
@@ -50,15 +74,14 @@ const CarListingList: FC<Props> = ({
                 <EditableCarListing
                   listing={l}
                   view={view}
+                  isEditing={editingId === l.id}
                   armyScore={getArmyScore(l)}
                   allowEdit={allowEdit}
-                  isEditing={editingId === l.id}
                   onToggleEditing={() => {
-                    setEditingId((current) => (l.id !== current ? l.id : null));
-
-                    onToggleEditing && onToggleEditing(l.brandId);
+                    onToggleEditing && onToggleEditing(l);
                   }}
                   onEdit={onEdit}
+                  onDelete={onDelete}
                 />
               </li>
             ))}
@@ -78,15 +101,14 @@ const CarListingList: FC<Props> = ({
                 <EditableCarListing
                   listing={l}
                   view={view}
+                  isEditing={editingId === l.id}
                   armyScore={getArmyScore(l)}
                   allowEdit={allowEdit}
-                  isEditing={editingId === l.id}
                   onToggleEditing={() => {
-                    setEditingId((current) => (l.id !== current ? l.id : null));
-
-                    onToggleEditing && onToggleEditing(l.brandId);
+                    onToggleEditing && onToggleEditing(l);
                   }}
                   onEdit={onEdit}
+                  onDelete={onDelete}
                 />
               </li>
             ))}

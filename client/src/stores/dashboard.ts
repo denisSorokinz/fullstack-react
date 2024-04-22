@@ -12,13 +12,18 @@ type State = {
   editListingOptions: {
     brands: FilterOption[];
     models: Map<CarListing["brandId"], FilterOption[]>;
+    editingListingId: number | null;
+    isPending: boolean;
   };
 };
 
 type Actions = {
   setFilterData: (nextValue: State["filterData"]) => void;
   setListings: (nextValue: State["listings"]) => void;
-  onToggleEditing: (brandId: CarListing["brandId"]) => void;
+  setIsPendingEdit: (
+    nextIsPending: State["editListingOptions"]["isPending"]
+  ) => void;
+  onToggleEditing: (listing: CarListing) => void;
   updateStore: (nextValue: Partial<State>) => void;
 };
 
@@ -34,7 +39,9 @@ const createDashboardStore = (
     editListingOptions: {
       brands: initProps?.brands || [],
       models: new Map(),
-    } as any,
+      editingListingId: null,
+      isPending: false,
+    },
   };
 
   initProps && delete initProps["brands"];
@@ -44,18 +51,28 @@ const createDashboardStore = (
     ...initProps,
     setFilterData: (nextValue) => set({ filterData: nextValue }),
     setListings: (nextValue) => set({ listings: nextValue }),
-    onToggleEditing: async (brandId) => {
+    setIsPendingEdit: (nextIsPending) => {
+      const nextOptions: State["editListingOptions"] = get().editListingOptions;
+      nextOptions.isPending = nextIsPending;
+
+      return set({ editListingOptions: nextOptions });
+    },
+    onToggleEditing: async (listing) => {
       const options = get().editListingOptions;
-      const nextOptions = { ...options };
+      const nextOptions = {
+        ...options,
+        editingListingId:
+          options.editingListingId !== listing.id ? listing.id : null,
+      };
 
       if (options.brands.length === 0) {
         const brands = await fetchBrands();
         if (brands) nextOptions.brands = brands;
       }
 
-      if (!options.models.get(brandId)) {
-        const models = await fetchModelsByBrand(brandId);
-        if (models) nextOptions.models.set(brandId, models);
+      if (!options.models.get(listing.brandId)) {
+        const models = await fetchModelsByBrand(listing.brandId);
+        if (models) nextOptions.models.set(listing.brandId, models);
       }
 
       return set({ editListingOptions: nextOptions });

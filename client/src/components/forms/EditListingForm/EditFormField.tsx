@@ -40,7 +40,6 @@ const EditFormField = forwardRef<HTMLElement, Props>(
     let input: JSX.Element = <></>;
 
     if (fieldMeta.type === "select") {
-      console.log({ name, value: field.value })
       input = (
         <EditSelect
           key={`${name}-select`}

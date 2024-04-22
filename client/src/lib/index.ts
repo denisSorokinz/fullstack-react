@@ -1,8 +1,9 @@
 import { ENDPOINTS } from "../constants";
 import { CarListingExpanded, type CarListing } from "../types/listings";
-import { FilterValuesType, FiltersType } from "../types/filters";
+import { FilterOption, FilterValuesType, FiltersType } from "../types/filters";
 import { decodeHtmlString, sanitizeObject } from "@/lib/utils";
 import { CarApiOperations, CarApiResponse } from "@/types/http";
+import { DashboardStoreState } from "@/stores/dashboard";
 
 const fetchRiaApi = async <T>(
   endpoint: string,
@@ -116,6 +117,41 @@ const fetchModelsByBrand = async (brandId: number) => {
   return res.data[CarApiOperations.getModelsByBrand];
 };
 
+const mapListingToUI = (
+  listing: CarListing,
+  brands: FilterOption[],
+  models: Map<CarListing["brandId"], FilterOption[]>
+) => {
+  const { name: brand } = brands.find((brand) => brand.id === listing.brandId)!;
+
+  const brandModels = models.get(listing.brandId)!;
+  const { name: model } = brandModels.find(
+    (model) => model.id === listing.modelId
+  )!;
+
+  return { ...listing, brand, model } as CarListing;
+};
+
+const updateListingsEntry = (
+  state: CarListing[],
+  nextEntry: Pick<CarListing, "id"> & Partial<CarListing>,
+  { brands, models }: DashboardStoreState["editListingOptions"]
+) => {
+  const existingIdx = state.findIndex((item) => item.id === nextEntry.id);
+
+  if (existingIdx === -1) return state;
+
+  const nextState = [...state];
+
+  const updated = { ...nextState[existingIdx], ...nextEntry } as CarListing;
+  const mapped = mapListingToUI(updated, brands, models);
+
+  nextState[existingIdx] = mapped;
+  console.log({ next: mapped });
+
+  return nextState;
+};
+
 const getArmyScore = ({ price, mileage, year }: CarListing) => {
   if (mileage === undefined) return 0;
 
@@ -190,4 +226,6 @@ export {
   fetchBrands,
   fetchModelsByBrand,
   getArmyScore,
+  mapListingToUI,
+  updateListingsEntry
 };

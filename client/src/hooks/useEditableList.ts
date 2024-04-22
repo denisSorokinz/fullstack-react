@@ -2,31 +2,18 @@ import { useOptimistic, useTransition } from "react";
 
 type WithId<T> = T & { id: number };
 
-const updateEntry = <T extends { id: number }>(
-  state: Array<T>,
-  nextEntry: WithId<Partial<T>>
-) => {
-  const existingIdx = state.findIndex((item) => item.id === nextEntry.id);
-
-  if (existingIdx === -1) return state;
-
-  const nextState = [...state];
-  const entryCopy = { ...nextState[existingIdx] };
-  nextState[existingIdx] = { ...entryCopy, ...nextEntry };
-
-  return nextState;
-};
-
 const useEditableList = <T extends { id: number }>(
   list: Array<T>,
-  onUpdate: (nextEntry: WithId<Partial<T>>) => Promise<boolean>
+  onUpdate: (nextEntry: WithId<Partial<T>>) => Promise<boolean>,
+  onDelete: (entryId: number) => Promise<boolean>,
+  replaceStateEntry: (state: T[], nextValue: WithId<Partial<T>>) => T[]
 ) => {
   const [isPending, startTransition] = useTransition();
 
   const [uiList, updateUIEntry] = useOptimistic(
     list,
     (currentState, optimisticValue: WithId<Partial<T>>) => {
-      const nextState = updateEntry(currentState, optimisticValue);
+      const nextState = replaceStateEntry(currentState, optimisticValue);
 
       return nextState;
     }
@@ -46,7 +33,7 @@ const useEditableList = <T extends { id: number }>(
     });
   };
 
-  return { uiList, updateListEntry };
+  return { uiList, updateListEntry, transitionPending: isPending };
 };
 
 export default useEditableList;

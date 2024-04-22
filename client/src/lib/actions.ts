@@ -111,7 +111,6 @@ const updateListing = async (
 
   if (!json.success) return { ...json };
 
-  await new Promise((res) => void setTimeout(res, 3000));
   return {
     success: true,
     listing: json.data[CarApiOperations.updateListing]!,

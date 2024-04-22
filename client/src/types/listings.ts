@@ -8,12 +8,12 @@ interface ICarListing {
   createdAt: Date;
   slug: string;
   thumbnailUrl?: string;
-  brand: string;
-  model: string;
   description?: string;
 }
 
 type CarListing = ICarListing & {
+  brand: string;
+  model: string;
   thumbnailUrl: string;
 };
 

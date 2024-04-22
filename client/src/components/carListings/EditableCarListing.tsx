@@ -1,4 +1,4 @@
-import { FC, useMemo } from "react";
+import { FC, memo, useMemo } from "react";
 import CarListing, { CarListingProps } from "./CarListing";
 import FlipBox, { flipClassName } from "../FlipBox";
 import { CarListing as CarListingType } from "@/types/listings";
@@ -14,6 +14,7 @@ type Props = CarListingProps & {
   onEdit?: (
     listing: Pick<CarListingType, "id"> & Partial<CarListingType>
   ) => void;
+  onDelete?: (listingId: CarListingType["id"]) => void;
 };
 
 const EditableCarListing: FC<Props> = ({
@@ -22,8 +23,9 @@ const EditableCarListing: FC<Props> = ({
   armyScore,
   allowEdit,
   isEditing,
-  onEdit,
   onToggleEditing,
+  onEdit,
+  onDelete,
 }) => {
   if (!allowEdit)
     return <CarListing listing={listing} view={view} armyScore={armyScore} />;
@@ -32,6 +34,7 @@ const EditableCarListing: FC<Props> = ({
     const nextListing = { id: listing.id, ...editedFields };
     onEdit && onEdit(nextListing);
   };
+  const handleDelete = () => onDelete && onDelete(listing.id);
 
   const formDefaultValues = useMemo(() => {
     const lens = OnlyPropertiesLens.from([
@@ -74,7 +77,9 @@ const EditableCarListing: FC<Props> = ({
         <div className={cn(flipClassName, "cursor-pointer")}>
           <EditListingForm
             defaultValues={formDefaultValues}
+            listingId={listing.id}
             onEdit={handleEdit}
+            onDelete={handleDelete}
           />
         </div>
       }

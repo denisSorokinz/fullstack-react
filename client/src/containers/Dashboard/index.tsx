@@ -2,29 +2,20 @@
 
 import CarListingList from "@/components/carListings/List";
 import SearchForm from "@/components/forms/SearchForm";
-import { FilterValuesType } from "@/types/filters";
-import { FC, useCallback } from "react";
+import { FilterOption, FilterValuesType } from "@/types/filters";
+import { FC, useCallback, useEffect } from "react";
 import { CarListing } from "@/types/listings";
-import { fetchCarListings, fetchFilters } from "@/lib";
+import {
+  fetchCarListings,
+  fetchFilters,
+  updateListingsEntry,
+} from "@/lib";
 import { debounce, debounceFetcher } from "@/lib/utils";
-import { useDashboardStore } from "@/stores/dashboard";
+import { DashboardStoreState, useDashboardStore } from "@/stores/dashboard";
 import { updateListing } from "@/lib/actions";
 import useEditableList from "@/hooks/useEditableList";
 
-const updateEntry = <T extends { id: number }>(
-  state: Array<T>,
-  nextEntry: Partial<T>
-) => {
-  const existingIdx = state.findIndex((item) => item.id === nextEntry.id);
-
-  if (existingIdx === -1) return state;
-
-  const nextState = [...state];
-  const entryCopy = { ...nextState[existingIdx] };
-  nextState[existingIdx] = { ...entryCopy, ...nextEntry };
-
-  return nextState;
-};
+const debouncedUpdate = debounceFetcher(updateListing);
 
 type Props = {
   initialFilters: FilterValuesType;
@@ -62,17 +53,20 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
     setListings(nextListings!);
   };
 
-  const serverAction = useCallback(debounceFetcher(updateListing), []);
   const updateCb = async (
     edited: Pick<CarListing, "id"> & Partial<CarListing>
   ) => {
     try {
-      const { success, listing } = await serverAction(edited);
+      const { success, listing } = await debouncedUpdate(edited);
       console.log(success);
 
       if (!(success && listing)) return false;
 
-      const nextListings = updateEntry(listings, edited);
+      const nextListings = updateListingsEntry(
+        listings,
+        edited,
+        dashboardStore.editListingOptions
+      );
       setListings(nextListings);
 
       return true;
@@ -80,9 +74,34 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
       return false;
     }
   };
+  const deleteCb = async (listingId: number) => {
+    try {
+      const { success } = await deleteListing(listingId);
+
+      if (!(success)) return false;
+
+      const nextListings = listings.filter(l => l.id !== listingId);
+      setListings(nextListings);
+
+      return true;
+    } catch (err: any) {
+      return false;
+    }
+  }
 
   // edit listings
-  const { uiList, updateListEntry } = useEditableList(listings, updateCb);
+  const { uiList: optimisticListings, updateListEntry, transitionPending } = useEditableList(
+    listings,
+    updateCb,
+    deleteCb,
+    (listings, nextListing) =>
+      updateListingsEntry(
+        listings,
+        nextListing,
+        dashboardStore.editListingOptions
+      )
+  );
+  useEffect(() => dashboardStore.setIsPendingEdit(transitionPending), [transitionPending])
 
   return (
     <div className="flex gap-8">
@@ -98,7 +117,8 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
           onReset={handleReset}
         />
         <CarListingList
-          listings={uiList}
+          listings={optimisticListings}
+          editingId={dashboardStore.editListingOptions.editingListingId}
           allowEdit={true}
           onToggleEditing={dashboardStore.onToggleEditing}
           onEdit={updateListEntry}

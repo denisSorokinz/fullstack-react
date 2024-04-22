@@ -14,11 +14,12 @@ import { ControllerRenderProps, useForm } from "react-hook-form";
 import { ZodDate, ZodNumber, ZodOptional, ZodString, z } from "zod";
 import EditFormField from "./EditFormField";
 import { editableListingFields } from "@/constants";
+import { LoadingSpinner, Trash } from "@/components/icons";
 
 const getSchema = (filterData: FiltersType) =>
   z.object({
-    brandId: z.number(),
-    modelId: z.number(),
+    brandId: z.coerce.number(),
+    modelId: z.coerce.number(),
     description: z.string().optional(),
     // createdAt: z.date().optional(),
     year: validateRange(filterData, FILTER_NAMES.YEAR),
@@ -28,17 +29,18 @@ const getSchema = (filterData: FiltersType) =>
 export type EditListingFormData = z.infer<ReturnType<typeof getSchema>>;
 
 type Props = {
-  listingId?: number;
+  listingId: number;
   defaultValues: Pick<
     CarListing,
     "brandId" | "modelId" | "description" | "mileage" | "price" | "year"
   >;
   onEdit: (edited: Pick<CarListing, "id"> & EditListingFormData) => void;
+  onDelete: () => void;
 };
-const EditListingForm: FC<Props> = ({ defaultValues, onEdit }) => {
-  const { filterData, editOptions } = useDashboardStore((store) => ({
+const EditListingForm: FC<Props> = ({ listingId, defaultValues, onEdit, onDelete }) => {
+  const { filterData, isPendingEdit } = useDashboardStore((store) => ({
     filterData: store.filterData!,
-    editOptions: store.editListingOptions,
+    isPendingEdit: store.editListingOptions.isPending,
   }));
 
   const schema = useMemo(() => getSchema(filterData), [filterData]);
@@ -51,20 +53,29 @@ const EditListingForm: FC<Props> = ({ defaultValues, onEdit }) => {
 
   const handleEdit = useCallback((formData: EditListingFormData) => {
     console.log("editForm submitted");
-    onEdit({ id: 34346721, ...formData });
+    onEdit({ id: listingId, ...formData });
   }, []);
 
-  const { description } = form.watch();
+  const { brandId, modelId, year, price, mileage, description } = form.watch();
   useEffect(() => {
-    if (defaultValues.description === description) return;
+    if (
+      defaultValues.brandId === brandId &&
+      defaultValues.modelId === modelId &&
+      defaultValues.year === year &&
+      defaultValues.price === price &&
+      defaultValues.mileage === mileage &&
+      defaultValues.description === description
+    ) {
+      return;
+    }
 
     const autosaveCb = form.handleSubmit(handleEdit);
     autosaveCb();
-  }, [description]);
+  }, [brandId, modelId, year, price, mileage, description]);
 
   const fields = useMemo(() => {
     return Object.keys(editableListingFields).map((fieldName) => {
-      const key = fieldName as keyof typeof editableListingFields
+      const key = fieldName as keyof typeof editableListingFields;
 
       return (
         <FormField
@@ -93,21 +104,29 @@ const EditListingForm: FC<Props> = ({ defaultValues, onEdit }) => {
         onSubmit={form.handleSubmit(handleEdit, (err) => {
           console.log("edit form validation errors:", err);
         })}
-        className="space-y-6"
+        className="relative space-y-4"
       >
         {fields}
-        <Button
-          type="submit"
-          className={cn(
-            noFlipClassName,
-            "bg-slate-700 text-slate-100 hover:bg-slate-600"
-          )}
-        >
-          Submit
+        <Button className="flex w-full items-center gap-2 rounded-md bg-slate-600 p-2 uppercase tracking-wide text-slate-100 hover:bg-slate-700" onClick={onDelete}>
+          <i className="flex items-center">
+            <Trash width={18} height={18} stroke="#fff" />
+          </i>
+          <span className="relative top-[1px]">Delete</span>
         </Button>
+        {isPendingEdit && (
+          <span className="absolute bottom-0 left-0 flex w-full items-center justify-center gap-2 bg-slate-500 px-2 py-4  text-slate-100 shadow-lg">
+            <i className="flex items-center">
+              <LoadingSpinner width={16} height={16} />
+            </i>
+            autosaving...
+          </span>
+        )}
       </form>
     </Form>
   );
 };
 
-export default EditListingForm;
+export default memo(
+  EditListingForm,
+  (prev, next) => prev.listingId === next.listingId
+);
