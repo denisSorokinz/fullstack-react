@@ -15,6 +15,7 @@ import { AuthStoreState } from "@/stores/auth";
 import { getSessionData, refreshAccessToken, validateToken } from "./auth";
 import { NextResponse } from "next/server";
 import { CarListing } from "@/types/listings";
+import { sleepMs } from "./utils";
 
 // AUTH
 const requestInit: RequestInit = {
@@ -117,4 +118,19 @@ const updateListing = async (
   };
 };
 
-export { authenticate, logout, isAuthenticated, updateListing };
+const deleteListing = async (id: CarListing["id"]) => {
+  const sessionValid = isAuthenticated();
+  if (!sessionValid) return { success: false, message: "no access" };
+
+  const token = cookies().get("accessToken")!.value;
+
+  const res = await fetch(`${ENDPOINTS.BASE_NEXT_LISTINGS}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ id }),
+  });
+
+  return { success: res.status === 204 };
+};
+
+export { authenticate, logout, isAuthenticated, updateListing, deleteListing };

@@ -30,3 +30,26 @@ export const PUT = async (request: Request, response: Response) => {
   const data = await res.json();
   return Response.json({ ...data }, { status: res.status });
 };
+
+export const DELETE = async (request: Request, response: Response) => {
+  const token = request.headers.get("Authorization")?.replace("Bearer ", "");
+
+  const sessionValid = validateToken(token);
+  if (!sessionValid) {
+    return Response.json(
+      { success: false, message: "no access token provided" },
+      { status: 401 }
+    );
+  }
+
+  const { id } = (await request.json()) as { id: CarListing["id"] };
+
+  const res = await fetch(`${ENDPOINTS.BASE_API_LISTINGS}/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+  return new Response(null, { status: res.status });
+};

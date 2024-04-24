@@ -99,4 +99,8 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export { sanitizeObject, decodeHtmlString, cn, debounce, debounceFetcher };
+function sleepMs(delay: number) {
+  return new Promise((res) => setTimeout(res, delay));
+}
+
+export { sanitizeObject, decodeHtmlString, cn, debounce, debounceFetcher, sleepMs };

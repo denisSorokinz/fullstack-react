@@ -3,16 +3,12 @@
 import CarListingList from "@/components/carListings/List";
 import SearchForm from "@/components/forms/SearchForm";
 import { FilterOption, FilterValuesType } from "@/types/filters";
-import { FC, useCallback, useEffect } from "react";
+import { FC, useCallback, useContext, useEffect } from "react";
 import { CarListing } from "@/types/listings";
-import {
-  fetchCarListings,
-  fetchFilters,
-  updateListingsEntry,
-} from "@/lib";
+import { fetchCarListings, fetchFilters, updateListingsEntry } from "@/lib";
 import { debounce, debounceFetcher } from "@/lib/utils";
 import { DashboardStoreState, useDashboardStore } from "@/stores/dashboard";
-import { updateListing } from "@/lib/actions";
+import { deleteListing, updateListing } from "@/lib/actions";
 import useEditableList from "@/hooks/useEditableList";
 
 const debouncedUpdate = debounceFetcher(updateListing);
@@ -21,9 +17,8 @@ type Props = {
   initialFilters: FilterValuesType;
 };
 const DashboardContent: FC<Props> = ({ initialFilters }) => {
-  const { listings, setListings, ...dashboardStore } = useDashboardStore(
-    (store) => store
-  );
+  const { listings, setListings, selectListings, ...dashboardStore } =
+    useDashboardStore((store) => store);
 
   // filter form
   const handleSubmit = async (filters: Partial<FilterValuesType>) => {
@@ -77,34 +72,40 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
   const deleteCb = async (listingId: number) => {
     try {
       const { success } = await deleteListing(listingId);
+      console.log({ deleteListingSuccess: success });
 
-      if (!(success)) return false;
+      if (!success) return false;
 
-      const nextListings = listings.filter(l => l.id !== listingId);
+      const nextListings = selectListings().filter((l) => l.id !== listingId);
       setListings(nextListings);
 
       return true;
     } catch (err: any) {
       return false;
     }
-  }
+  };
 
   // edit listings
-  const { uiList: optimisticListings, updateListEntry, transitionPending } = useEditableList(
-    listings,
-    updateCb,
-    deleteCb,
-    (listings, nextListing) =>
-      updateListingsEntry(
-        listings,
-        nextListing,
-        dashboardStore.editListingOptions
-      )
+  const {
+    uiList: optimisticListings,
+    updateListEntry,
+    deleteListEntry,
+    transitionPending,
+  } = useEditableList(listings, updateCb, deleteCb, (listings, nextListing) =>
+    updateListingsEntry(
+      listings,
+      nextListing,
+      dashboardStore.editListingOptions
+    )
   );
-  useEffect(() => dashboardStore.setIsPendingEdit(transitionPending), [transitionPending])
+  useEffect(
+    () => dashboardStore.setIsPendingEdit(transitionPending),
+    [transitionPending]
+  );
 
   return (
     <div className="flex gap-8">
+      {listings.length} - {optimisticListings.length}
       <aside className="flex-[1] rounded-md bg-slate-300 p-4 dark:bg-slate-500">
         <h6 className="text-2xl">dashboard nav</h6>
       </aside>
@@ -122,6 +123,7 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
           allowEdit={true}
           onToggleEditing={dashboardStore.onToggleEditing}
           onEdit={updateListEntry}
+          onDelete={deleteListEntry}
         />
       </div>
     </div>

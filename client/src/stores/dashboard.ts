@@ -20,6 +20,7 @@ type State = {
 type Actions = {
   setFilterData: (nextValue: State["filterData"]) => void;
   setListings: (nextValue: State["listings"]) => void;
+  selectListings: () => State['listings'];
   setIsPendingEdit: (
     nextIsPending: State["editListingOptions"]["isPending"]
   ) => void;
@@ -51,6 +52,7 @@ const createDashboardStore = (
     ...initProps,
     setFilterData: (nextValue) => set({ filterData: nextValue }),
     setListings: (nextValue) => set({ listings: nextValue }),
+    selectListings: () => get().listings,
     setIsPendingEdit: (nextIsPending) => {
       const nextOptions: State["editListingOptions"] = get().editListingOptions;
       nextOptions.isPending = nextIsPending;
