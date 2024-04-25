@@ -8,7 +8,11 @@ import { CarListing } from "@/types/listings";
 import { fetchCarListings, fetchFilters, updateListingsEntry } from "@/lib";
 import { debounce, debounceFetcher } from "@/lib/utils";
 import { DashboardStoreState, useDashboardStore } from "@/stores/dashboard";
-import { deleteListing, updateListing } from "@/lib/actions";
+import {
+  toggleListingFavorites,
+  deleteListing,
+  updateListing,
+} from "@/lib/actions";
 import useEditableList from "@/hooks/useEditableList";
 
 const debouncedUpdate = debounceFetcher(updateListing);
@@ -17,8 +21,14 @@ type Props = {
   initialFilters: FilterValuesType;
 };
 const DashboardContent: FC<Props> = ({ initialFilters }) => {
-  const { listings, setListings, selectListings, ...dashboardStore } =
-    useDashboardStore((store) => store);
+  const {
+    listings,
+    setListings,
+    selectValue,
+    favoriteListingIds,
+    setFavorites,
+    ...dashboardStore
+  } = useDashboardStore((store) => store);
 
   // filter form
   const handleSubmit = async (filters: Partial<FilterValuesType>) => {
@@ -46,6 +56,22 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
 
     const nextListings = await fetchCarListings();
     setListings(nextListings!);
+  };
+
+  const handleToggleFavorite = async (listingId: number) => {
+    const { success, message, data } = await toggleListingFavorites(listingId);
+
+    if (!(success && data)) {
+      console.log("[toggleFavorite failed]:", message);
+      return;
+    }
+
+    const nextFavorites = selectValue("favoriteListingIds").filter(
+      (id) => id !== listingId
+    );
+    if (data.isFavorited) nextFavorites.push(listingId);
+
+    setFavorites(nextFavorites);
   };
 
   const updateCb = async (
@@ -76,7 +102,9 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
 
       if (!success) return false;
 
-      const nextListings = selectListings().filter((l) => l.id !== listingId);
+      const nextListings = selectValue("listings").filter(
+        (l) => l.id !== listingId
+      );
       setListings(nextListings);
 
       return true;
@@ -105,7 +133,6 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
 
   return (
     <div className="flex gap-8">
-      {listings.length} - {optimisticListings.length}
       <aside className="flex-[1] rounded-md bg-slate-300 p-4 dark:bg-slate-500">
         <h6 className="text-2xl">dashboard nav</h6>
       </aside>
@@ -121,9 +148,11 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
           listings={optimisticListings}
           editingId={dashboardStore.editListingOptions.editingListingId}
           allowEdit={true}
+          favoriteListingIds={favoriteListingIds}
           onToggleEditing={dashboardStore.onToggleEditing}
           onEdit={updateListEntry}
           onDelete={deleteListEntry}
+          onToggleFavorite={handleToggleFavorite}
         />
       </div>
     </div>

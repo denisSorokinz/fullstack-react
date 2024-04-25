@@ -2,7 +2,7 @@ import { ENDPOINTS } from "@/constants";
 import { validateToken } from "@/lib/auth";
 import { CarListing } from "@/types/listings";
 
-export const PUT = async (request: Request, response: Response) => {
+export const PUT = async (request: Request) => {
   const token = request.headers.get("Authorization")?.replace("Bearer ", "");
 
   const sessionValid = validateToken(token);
@@ -31,7 +31,7 @@ export const PUT = async (request: Request, response: Response) => {
   return Response.json({ ...data }, { status: res.status });
 };
 
-export const DELETE = async (request: Request, response: Response) => {
+export const DELETE = async (request: Request) => {
   const token = request.headers.get("Authorization")?.replace("Bearer ", "");
 
   const sessionValid = validateToken(token);

@@ -16,18 +16,22 @@ type Props = {
   allowEdit?: boolean;
   editingId?: number | null;
   onToggleEditing?: DashboardStoreState["onToggleEditing"];
+  favoriteListingIds?: Array<CarListingType["id"]>;
   onEdit?: (
     listing: Pick<CarListingType, "id"> & Partial<CarListingType>
   ) => void;
   onDelete?: (listingId: CarListingType["id"]) => void;
+  onToggleFavorite?: (listingId: CarListingType["id"]) => void;
 };
 const CarListingList: FC<Props> = ({
   listings,
+  favoriteListingIds,
   allowEdit,
   editingId,
   onToggleEditing,
   onEdit,
-  onDelete
+  onDelete,
+  onToggleFavorite,
 }) => {
   const [view, setView] = useState<ListViewType>("cards");
 
@@ -75,6 +79,7 @@ const CarListingList: FC<Props> = ({
                   listing={l}
                   view={view}
                   isEditing={editingId === l.id}
+                  isFavorited={favoriteListingIds?.includes(l.id)}
                   armyScore={getArmyScore(l)}
                   allowEdit={allowEdit}
                   onToggleEditing={() => {
@@ -82,6 +87,7 @@ const CarListingList: FC<Props> = ({
                   }}
                   onEdit={onEdit}
                   onDelete={onDelete}
+                  onToggleFavorite={onToggleFavorite}
                 />
               </li>
             ))}

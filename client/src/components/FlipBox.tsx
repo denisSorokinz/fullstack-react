@@ -12,15 +12,18 @@ type Props = {
   front: React.ReactNode;
   back: React.ReactNode;
   isFlipped?: boolean;
-  allowEdit?: boolean;
+  childProps?: string;
   dispatchFlip?: () => void;
 };
 const FlipBox: FC<Props> = ({
   front,
   back,
   isFlipped = false,
+  childProps,
   dispatchFlip,
 }) => {
+  console.log("[flipbox]");
+
   const containerRef = useRef<HTMLDivElement>(null);
   const frontRef = useRef<HTMLDivElement>(null);
   const backRef = useRef<HTMLDivElement>(null);
@@ -105,5 +108,5 @@ const FlipBox: FC<Props> = ({
 export default memo(
   FlipBox,
   (prev, next) =>
-    prev.isFlipped === next.isFlipped
+    prev.isFlipped === next.isFlipped && prev.childProps === next.childProps
 );

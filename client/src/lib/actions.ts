@@ -1,7 +1,7 @@
 "use server";
 
 import { AuthFormData } from "@/components/forms/AuthForm";
-import { AUTH_OPERATIONS, ENDPOINTS } from "@/constants";
+import { AUTH_OPERATIONS, BASE_NEXT_URL, ENDPOINTS } from "@/constants";
 import {
   AuthJWTPayload,
   AuthResponse,
@@ -62,6 +62,7 @@ const authenticate = async ({
   return { success: true, user };
 };
 
+// todo: decouple into validateSession() and refreshSession
 const isAuthenticated = async () => {
   const accessToken = cookies().get("accessToken")?.value;
   const isAuthenticated = validateToken(accessToken);
@@ -97,7 +98,7 @@ const logout = () => {
 const updateListing = async (
   edited: Pick<CarListing, "id"> & Partial<CarListing>
 ) => {
-  const sessionValid = isAuthenticated();
+  const sessionValid = await isAuthenticated();
   if (!sessionValid) return { success: false, message: "no access" };
 
   const token = cookies().get("accessToken")!.value;
@@ -119,7 +120,7 @@ const updateListing = async (
 };
 
 const deleteListing = async (id: CarListing["id"]) => {
-  const sessionValid = isAuthenticated();
+  const sessionValid = await isAuthenticated();
   if (!sessionValid) return { success: false, message: "no access" };
 
   const token = cookies().get("accessToken")!.value;
@@ -133,4 +134,60 @@ const deleteListing = async (id: CarListing["id"]) => {
   return { success: res.status === 204 };
 };
 
-export { authenticate, logout, isAuthenticated, updateListing, deleteListing };
+const toggleListingFavorites = async (listingId: number) => {
+  const sessionValid = await isAuthenticated();
+  if (!sessionValid) return { success: false, message: "no access" };
+
+  const token = cookies().get("accessToken")!.value;
+
+  const res = await fetch(
+    `${BASE_NEXT_URL}/users/favorites/${listingId}/toggle`,
+    {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-cache",
+    }
+  );
+  if (res.status !== 200) return { success: false, message: await res.text() };
+
+  const data = await res.json() as { listingId: number, favoriteCount: number, isFavorited: boolean };
+  return { success: true, data };
+};
+
+const getAuthorizedResource = async <T>(url: string) => {
+  const token = cookies().get("accessToken")?.value;
+  const sessionValid = validateToken(token);
+
+  if (!sessionValid) return { success: false };
+
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-cache",
+  });
+  if (res.status !== 200) return { success: false, message: await res.text() };
+
+  const data = (await res.json()) as T;
+  return { success: true, data };
+};
+
+const getFavorites = async () => {
+  const endpoint = `${BASE_NEXT_URL}/users/favorites`;
+
+  const res = await getAuthorizedResource<{
+    favorites: Array<CarListing["id"]>;
+  }>(endpoint);
+
+  if (!res.success) return { success: false };
+
+  return { success: true, favorites: res.data!.favorites };
+};
+
+export {
+  authenticate,
+  logout,
+  isAuthenticated,
+  getFavorites,
+  updateListing,
+  deleteListing,
+  toggleListingFavorites,
+};

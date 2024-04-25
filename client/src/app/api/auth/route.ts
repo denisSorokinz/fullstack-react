@@ -8,12 +8,6 @@ const requestInit: RequestInit = {
   cache: "no-cache",
 };
 
-export async function GET(request: Request) {
-  console.log({ testCookie: cookies().get("accessToken")?.value });
-
-  return new Response("ok");
-}
-
 export async function POST(request: Request) {
   const { type, email, password, refreshToken } = (await request.json()) as {
     type: AUTH_OPERATIONS;

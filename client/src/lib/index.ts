@@ -5,7 +5,7 @@ import { decodeHtmlString, sanitizeObject } from "@/lib/utils";
 import { CarApiOperations, CarApiResponse } from "@/types/http";
 import { DashboardStoreState } from "@/stores/dashboard";
 
-const fetchRiaApi = async <T>(
+const fetchCarsApi = async <T>(
   endpoint: string,
   queryParams?: URLSearchParams,
   requestInit?: RequestInit,
@@ -49,7 +49,7 @@ const fetchFilters = async (filterValues?: FilterValuesType) => {
 
   const searchParams = new URLSearchParams(activeFilterValues as any);
 
-  const res = await fetchRiaApi<CarApiOperations.getFilters>(
+  const res = await fetchCarsApi<CarApiOperations.getFilters>(
     ENDPOINTS.QUERIES.GET_FILTERS,
     searchParams,
     {
@@ -66,7 +66,7 @@ const fetchCarListings = async (filterValues?: Partial<FilterValuesType>) => {
 
   const searchParams = new URLSearchParams(activeFilterValues as any);
 
-  const res = await fetchRiaApi<CarApiOperations.getListings>(
+  const res = await fetchCarsApi<CarApiOperations.getListings>(
     ENDPOINTS.QUERIES.GET_CAR_LISTINGS,
     searchParams,
     {
@@ -79,7 +79,7 @@ const fetchCarListings = async (filterValues?: Partial<FilterValuesType>) => {
 };
 
 const fetchListingDetails = async (id: string) => {
-  const res = await fetchRiaApi<CarApiOperations.getListing>(
+  const res = await fetchCarsApi<CarApiOperations.getListing>(
     `${ENDPOINTS.QUERIES.GET_CAR_LISTING}`,
     undefined,
     {
@@ -93,7 +93,7 @@ const fetchListingDetails = async (id: string) => {
 };
 
 const fetchBrands = async () => {
-  const res = await fetchRiaApi<CarApiOperations.getBrands>(
+  const res = await fetchCarsApi<CarApiOperations.getBrands>(
     `${ENDPOINTS.QUERIES.GET_BRANDS}`,
     undefined,
     { next: { revalidate: 60 } }
@@ -105,7 +105,7 @@ const fetchBrands = async () => {
 };
 
 const fetchModelsByBrand = async (brandId: number) => {
-  const res = await fetchRiaApi<CarApiOperations.getModelsByBrand>(
+  const res = await fetchCarsApi<CarApiOperations.getModelsByBrand>(
     `${ENDPOINTS.QUERIES.GET_MODELS_BY_BRAND}`,
     undefined,
     { next: { revalidate: 60 } },
@@ -219,7 +219,6 @@ const getArmyScore = ({ price, mileage, year }: CarListing) => {
 };
 
 export {
-  fetchRiaApi,
   fetchFilters,
   fetchCarListings,
   fetchListingDetails,
@@ -227,5 +226,5 @@ export {
   fetchModelsByBrand,
   getArmyScore,
   mapListingToUI,
-  updateListingsEntry
+  updateListingsEntry,
 };

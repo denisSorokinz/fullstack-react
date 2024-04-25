@@ -8,7 +8,8 @@ dotenv.config();
 import riaApiRouter from './routers/api/cars';
 import authRouter from './routers/api/auth';
 import crawlerRouter from './routers/crawler';
-import { validateQueryString } from './middlewares';
+import usersRouter from './routers/api/users';
+import { authGuard, validateQueryString } from './middlewares';
 
 const PORT = 4001;
 
@@ -20,6 +21,7 @@ app.use(cookieParser());
 
 app.use('/api/cars', validateQueryString, riaApiRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/users', authGuard, usersRouter);
 app.use('/crawler', crawlerRouter);
 
 app.listen(PORT, () => console.log(`listening on port: ${PORT}`));

@@ -2,6 +2,7 @@ import LoadingSpinner from "./LoadingSpinner";
 import Trash from "./Trash";
 import Helmet from "./Helmet";
 import Pen from "./Pen";
+import Heart from "./Heart";
 import Mileage from "./Mileage";
 import Cards from "./Cards";
 import List from "./List";
@@ -15,4 +16,4 @@ export type SVGProps = {
   color?: string;
 };
 
-export { LoadingSpinner, Trash, Mileage, Cards, List, Helmet, Pen };
+export { LoadingSpinner, Trash, Mileage, Cards, List, Helmet, Pen, Heart };

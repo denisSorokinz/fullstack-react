@@ -9,6 +9,7 @@ import { create, createStore, useStore } from "zustand";
 type State = {
   filterData: FiltersType | null;
   listings: CarListing[];
+  favoriteListingIds: Array<CarListing["id"]>;
   editListingOptions: {
     brands: FilterOption[];
     models: Map<CarListing["brandId"], FilterOption[]>;
@@ -20,10 +21,11 @@ type State = {
 type Actions = {
   setFilterData: (nextValue: State["filterData"]) => void;
   setListings: (nextValue: State["listings"]) => void;
-  selectListings: () => State['listings'];
+  selectValue: <T extends keyof State>(key: T) => State[T];
   setIsPendingEdit: (
     nextIsPending: State["editListingOptions"]["isPending"]
   ) => void;
+  setFavorites: (nextValue: State["favoriteListingIds"]) => void;
   onToggleEditing: (listing: CarListing) => void;
   updateStore: (nextValue: Partial<State>) => void;
 };
@@ -36,6 +38,7 @@ const createDashboardStore = (
 ) => {
   const DEFAULT_PROPS: State = {
     filterData: null,
+    favoriteListingIds: [],
     listings: [],
     editListingOptions: {
       brands: initProps?.brands || [],
@@ -52,13 +55,14 @@ const createDashboardStore = (
     ...initProps,
     setFilterData: (nextValue) => set({ filterData: nextValue }),
     setListings: (nextValue) => set({ listings: nextValue }),
-    selectListings: () => get().listings,
+    selectValue: (key) => get()[key],
     setIsPendingEdit: (nextIsPending) => {
       const nextOptions: State["editListingOptions"] = get().editListingOptions;
       nextOptions.isPending = nextIsPending;
 
       return set({ editListingOptions: nextOptions });
     },
+    setFavorites: (nextValue) => set({ favoriteListingIds: nextValue }),
     onToggleEditing: async (listing) => {
       const options = get().editListingOptions;
       const nextOptions = {

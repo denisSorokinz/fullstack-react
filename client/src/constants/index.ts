@@ -26,10 +26,11 @@ enum FILTER_SLUGS {
 }
 
 // ENDPOINTS
-const BASE_NEXT_URL = `${process.env.NEXT_PUBLIC_BASE_URL}/api`;
+export const BASE_NEXT_URL = `${process.env.NEXT_PUBLIC_BASE_URL}/api`;
 const BASE_API_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 const ENDPOINTS = {
   CARS_API: `${BASE_API_URL}/cars`,
+  BASE_API_USERS: `${BASE_API_URL}/users`,
   BASE_API_LISTINGS: `${BASE_API_URL}/cars/listings`,
   BASE_NEXT_LISTINGS: `${BASE_NEXT_URL}/listings`,
   QUERIES: {
@@ -43,7 +44,7 @@ const ENDPOINTS = {
     GET_MODELS_BY_BRAND: "brands/:brandId/models",
   },
   MUTATIONS: {
-    UPDATE_LISTING: "listings/:listingId",
+    LISTING_UPDATE: "listings/:listingId",
   },
   AUTH: {
     BASE_NEXT_AUTH: `${BASE_NEXT_URL}/auth`,

@@ -15,8 +15,8 @@ import {
 
 export const DashboardContext = createContext<DashboardStore | null>(null);
 
-type ProviderProps = { initProps: Partial<DashboardStoreState> & { brands?: FilterOption[] } };
-export const DashboardProvider: FC<PropsWithChildren<ProviderProps>> = ({
+export type DashboardProviderProps = { initProps: Partial<DashboardStoreState> & { brands?: FilterOption[] } };
+export const DashboardProvider: FC<PropsWithChildren<DashboardProviderProps>> = ({
   children,
   initProps,
 }) => {

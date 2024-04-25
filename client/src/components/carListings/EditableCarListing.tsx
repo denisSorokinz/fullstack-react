@@ -10,11 +10,13 @@ import { OnlyPropertiesLens } from "@/lib/lenses";
 type Props = CarListingProps & {
   allowEdit?: boolean;
   isEditing?: boolean;
+  isFavorited?: boolean;
   onToggleEditing?: (listing: CarListingType) => void;
   onEdit?: (
     listing: Pick<CarListingType, "id"> & Partial<CarListingType>
   ) => void;
   onDelete?: (listingId: CarListingType["id"]) => void;
+  onToggleFavorite?: (listingId: CarListingType["id"]) => void;
 };
 
 const EditableCarListing: FC<Props> = ({
@@ -22,13 +24,27 @@ const EditableCarListing: FC<Props> = ({
   view,
   armyScore,
   allowEdit,
+  isFavorited,
   isEditing,
   onToggleEditing,
   onEdit,
   onDelete,
+  onToggleFavorite,
 }) => {
+  if (listing.id === 35542291)
+    console.log({
+      editableCarListingDebug: { id: listing.id, isFavorited },
+    });
+
   if (!allowEdit)
-    return <CarListing listing={listing} view={view} armyScore={armyScore} />;
+    return (
+      <CarListing
+        listing={listing}
+        view={view}
+        armyScore={armyScore}
+        isFavorited={isFavorited}
+      />
+    );
 
   const handleEdit = (editedFields: EditListingFormData) => {
     const nextListing = { id: listing.id, ...editedFields };
@@ -61,16 +77,21 @@ const EditableCarListing: FC<Props> = ({
         <div className="relative h-full">
           <div
             className={`${cn(
-              flipClassName,
-              "absolute left-2 top-2 z-10 flex h-8 cursor-pointer items-center gap-2 rounded-lg bg-amber-500 px-2 py-1 font-bold shadow-2xl shadow-black"
+              "absolute left-2 top-2 z-10 flex h-8 cursor-pointer items-center gap-2 rounded-lg bg-amber-500 px-2 py-1 font-bold shadow-2xl shadow-black",
+              flipClassName
             )}`}
           >
             <i>
               <Pen width={20} height={20} />
             </i>
           </div>
-
-          <CarListing listing={listing} view={view} armyScore={armyScore} />
+          <CarListing
+            listing={listing}
+            view={view}
+            armyScore={armyScore}
+            isFavorited={isFavorited}
+            onToggleFavorite={onToggleFavorite}
+          />
         </div>
       }
       back={
@@ -83,6 +104,14 @@ const EditableCarListing: FC<Props> = ({
           />
         </div>
       }
+      childProps={[
+        listing.brandId,
+        listing.modelId,
+        listing.price,
+        listing.description,
+        listing.mileage,
+        isFavorited,
+      ].toString()}
     />
   );
 };
