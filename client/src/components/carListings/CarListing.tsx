@@ -106,7 +106,7 @@ const CarListing: FC<CarListingProps> = ({
 
   if (view === "list")
     content = (
-      <div className="h-full overflow-hidden rounded-md bg-slate-200 shadow-lg transition hover:bg-slate-300 hover:shadow-xl prose-a:no-underline">
+      <div className="h-full overflow-hidden rounded-md bg-slate-200 shadow-lg transition hover:bg-slate-300 hover:shadow-xl prose-a:no-underline relative">
         <Link
           prefetch={false}
           href={`/listing/${listing.slug}`}
@@ -147,6 +147,32 @@ const CarListing: FC<CarListingProps> = ({
             </div>
           </div>
         </Link>
+        <div className="absolute right-2 top-2 flex h-8 items-center gap-2">
+          {armyBadge}
+          {onToggleFavorite && (
+            <button
+              className={cn(
+                "group/heart cursor-pointer rounded-lg bg-slate-100 p-1 transition-colors hover:bg-slate-200",
+                { "bg-red-500 hover:bg-red-600": isFavorited }
+              )}
+              onClick={() => onToggleFavorite(listing.id)}
+            >
+              <i>
+                <Heart
+                  width={22}
+                  height={22}
+                  className={cn(
+                    "text-red-500 transition-colors group-hover/heart:text-red-600",
+                    {
+                      "text-slate-100 group-hover/heart:text-slate-200":
+                        isFavorited,
+                    }
+                  )}
+                />
+              </i>
+            </button>
+          )}
+        </div>
       </div>
     );
 

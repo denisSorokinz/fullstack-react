@@ -24,7 +24,7 @@ const getSessionData = (token: string) => {
 
   const excludeProperties: Array<keyof AuthJWTPayload> = ["iat", "exp"];
   const lens = ExcludeLens.from(excludeProperties);
-  const sessionData = lens.view(typed);
+  const sessionData = lens.view(typed) as Omit<AuthJWTPayload, 'exp' | 'iat'>;
 
   return { ...sessionData };
 };

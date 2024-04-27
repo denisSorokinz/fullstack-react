@@ -17,6 +17,7 @@ type Props = {
   editingId?: number | null;
   onToggleEditing?: DashboardStoreState["onToggleEditing"];
   favoriteListingIds?: Array<CarListingType["id"]>;
+  view?: ListViewType;
   onEdit?: (
     listing: Pick<CarListingType, "id"> & Partial<CarListingType>
   ) => void;
@@ -32,8 +33,10 @@ const CarListingList: FC<Props> = ({
   onEdit,
   onDelete,
   onToggleFavorite,
+  view = 'cards'
 }) => {
-  const [view, setView] = useState<ListViewType>("cards");
+  // const [view, setView] = useState<ListViewType>("cards");
+  console.log({ favoriteListingIds });
 
   if (listings.length === 0)
     return <h3>Авто за вказаними критеріями не знайдено</h3>;
@@ -62,7 +65,7 @@ const CarListingList: FC<Props> = ({
   // todo: refactor
   return (
     <div className="flex flex-col gap-2">
-      <ViewSwitcher view={view} setView={setView} />
+      {/* <ViewSwitcher view={view} setView={setView} /> */}
       <AnimatePresence initial={false}>
         {view === "cards" && (
           <motion.ul
@@ -108,6 +111,7 @@ const CarListingList: FC<Props> = ({
                   listing={l}
                   view={view}
                   isEditing={editingId === l.id}
+                  isFavorited={favoriteListingIds?.includes(l.id)}
                   armyScore={getArmyScore(l)}
                   allowEdit={allowEdit}
                   onToggleEditing={() => {
@@ -115,6 +119,7 @@ const CarListingList: FC<Props> = ({
                   }}
                   onEdit={onEdit}
                   onDelete={onDelete}
+                  onToggleFavorite={onToggleFavorite}
                 />
               </li>
             ))}

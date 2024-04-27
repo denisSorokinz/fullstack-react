@@ -17,6 +17,7 @@ import { CarListing } from "@/types/listings";
 import CarListingList from "@/components/carListings/List";
 import { useAuthStore } from "@/stores/auth";
 import { clearDependencyFilters, getDefaultFilters } from "@/lib/filters";
+import { toggleListingFavorites } from "@/lib/actions";
 
 export type SearchFormValues = {
   [k in FILTER_NAMES]: number | "";
@@ -26,12 +27,19 @@ type Props = {
   initialFilterData: FiltersType;
   initialFilters: FilterValuesType;
   listings: CarListing[];
+  favoriteListingIds: number[];
 };
 
-const Home: FC<Props> = ({ initialFilterData, initialFilters, listings }) => {
+const Home: FC<Props> = ({
+  initialFilterData,
+  initialFilters,
+  listings,
+  favoriteListingIds,
+}) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const invalidateSession = useAuthStore((state) => state.invalidateSession);
+  const [favorites, setFavorites] = useState(favoriteListingIds);
 
   const [filterData, setFilterData] = useState(initialFilterData);
 
@@ -64,6 +72,17 @@ const Home: FC<Props> = ({ initialFilterData, initialFilters, listings }) => {
     [searchParams]
   );
 
+  const handleToggleFavorite = async (listingId: number) => {
+    const { success, message, data } = await toggleListingFavorites(listingId);
+
+    if (!(success && data)) return;
+
+    const nextFavorites = favorites.filter((id) => id !== listingId);
+    if (data.isFavorited) nextFavorites.push(listingId);
+
+    setFavorites(nextFavorites);
+  };
+
   return (
     <>
       <SearchForm
@@ -74,7 +93,11 @@ const Home: FC<Props> = ({ initialFilterData, initialFilters, listings }) => {
         onReset={handleReset}
       />
 
-      <CarListingList listings={listings} />
+      <CarListingList
+        listings={listings}
+        favoriteListingIds={favorites}
+        onToggleFavorite={handleToggleFavorite}
+      />
     </>
   );
 };

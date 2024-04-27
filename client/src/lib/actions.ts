@@ -1,5 +1,6 @@
 "use server";
 
+import { UserRole } from "./../../../server/types/http";
 import { AuthFormData } from "@/components/forms/AuthForm";
 import { AUTH_OPERATIONS, BASE_NEXT_URL, ENDPOINTS } from "@/constants";
 import {
@@ -87,6 +88,54 @@ const isAuthenticated = async () => {
   return true;
 };
 
+const roleToAccessLevel: { [k in UserRole]: number } = {
+  USER: 1,
+  ADMIN: 2,
+};
+const pageViewPermissions: { [k: string]: UserRole } = {
+  "/dashboard/*": "USER",
+  "/dashboard/edit": "ADMIN",
+};
+const isAuthorizedFor = async ({
+  action,
+  payload,
+}: {
+  action: "view:page" | "edit:listing";
+  payload: keyof typeof pageViewPermissions | string;
+}): Promise<{ isAuthorized: boolean; message?: string }> => {
+  let result = { isAuthorized: false };
+
+  if (action === "view:page") {
+    const path = payload;
+    const authorizedRole = pageViewPermissions[path];
+    const requiredAccessLevel = roleToAccessLevel[authorizedRole];
+
+    if (requiredAccessLevel === undefined) return { isAuthorized: true };
+
+    // todo: replace w/ isAuthenticated
+    const accessToken = cookies().get("accessToken")?.value || "";
+    const isAuthenticated = validateToken(accessToken);
+
+    console.log({ isAuthenticated });
+
+    if (!isAuthenticated)
+      return { isAuthorized: false, message: "Please authenticate" };
+
+    const sessionData = getSessionData(accessToken);
+    if (!sessionData)
+      return { isAuthorized: false, message: "Unable to authenticate" };
+
+    console.log({ sessionData });
+
+    const accessLevel = roleToAccessLevel[sessionData.role];
+    if (accessLevel >= requiredAccessLevel) result = { isAuthorized: true };
+  }
+
+  console.log({ forPath: payload, result });
+
+  return result;
+};
+
 const logout = () => {
   cookies().delete("accessToken");
   cookies().delete("refreshToken");
@@ -150,7 +199,11 @@ const toggleListingFavorites = async (listingId: number) => {
   );
   if (res.status !== 200) return { success: false, message: await res.text() };
 
-  const data = await res.json() as { listingId: number, favoriteCount: number, isFavorited: boolean };
+  const data = (await res.json()) as {
+    listingId: number;
+    favoriteCount: number;
+    isFavorited: boolean;
+  };
   return { success: true, data };
 };
 
@@ -186,6 +239,7 @@ export {
   authenticate,
   logout,
   isAuthenticated,
+  isAuthorizedFor,
   getFavorites,
   updateListing,
   deleteListing,

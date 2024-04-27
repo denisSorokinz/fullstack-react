@@ -31,11 +31,6 @@ const EditableCarListing: FC<Props> = ({
   onDelete,
   onToggleFavorite,
 }) => {
-  if (listing.id === 35542291)
-    console.log({
-      editableCarListingDebug: { id: listing.id, isFavorited },
-    });
-
   if (!allowEdit)
     return (
       <CarListing
@@ -43,6 +38,7 @@ const EditableCarListing: FC<Props> = ({
         view={view}
         armyScore={armyScore}
         isFavorited={isFavorited}
+        onToggleFavorite={onToggleFavorite}
       />
     );
 
