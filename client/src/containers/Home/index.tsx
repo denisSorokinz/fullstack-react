@@ -43,6 +43,8 @@ const Home: FC<Props> = ({
 
   const [filterData, setFilterData] = useState(initialFilterData);
 
+  const [page, setPage] = useState(1);
+
   const handleChange = async (
     nextFilters: FilterValuesType,
     isDependencyFilter: boolean
@@ -73,7 +75,10 @@ const Home: FC<Props> = ({
   );
 
   const handleToggleFavorite = async (listingId: number) => {
-    const { success, message, data } = await toggleListingFavorites(listingId);
+    const { success, message, data, ...res } = await toggleListingFavorites(
+      listingId
+    );
+    console.log({ success, message, data, res });
 
     if (!(success && data)) return;
 
@@ -98,6 +103,20 @@ const Home: FC<Props> = ({
         favoriteListingIds={favorites}
         onToggleFavorite={handleToggleFavorite}
       />
+
+      <ul>
+        <li>current page: {page}</li>
+        <li>
+          <button onClick={() => setPage((current) => current - 1)}>
+            prev page
+          </button>
+        </li>
+        <li>
+          <button onClick={() => setPage((current) => current + 1)}>
+            next page
+          </button>
+        </li>
+      </ul>
     </>
   );
 };

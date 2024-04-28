@@ -61,7 +61,9 @@ authRouter.post('/refreshAccessToken', (req, res) => {
 
   try {
     const decoded = jwt.verify(refreshToken, process.env['JWT_SECRET']!) as AuthJWTPayload;
-    const accessToken = jwt.sign({ id: decoded.id, email: decoded.email }, process.env['JWT_SECRET']!, { expiresIn: ACCESS_TOKEN_EXPIRY });
+    const accessToken = jwt.sign({ id: decoded.id, email: decoded.email, role: decoded.role }, process.env['JWT_SECRET']!, {
+      expiresIn: ACCESS_TOKEN_EXPIRY,
+    });
 
     return res.status(200).send({ success: true, tokens: { accessToken, refreshToken } } as AuthResponse);
   } catch {

@@ -1,4 +1,4 @@
-import { isAuthenticated } from "@/lib/actions";
+import { validateAndRefreshSession } from "@/lib/actions";
 import { useAuthStore } from "@/stores/auth";
 import { useEffect, useState } from "react";
 
@@ -8,12 +8,10 @@ const useAuthStatus = () => {
 
   useEffect(() => {
     const cb = async () => {
-      const nextIsAuthed = await isAuthenticated();
-      setIsAuthenticated(nextIsAuthed);
+      const session = await validateAndRefreshSession();
+      setIsAuthenticated(Boolean(session));
 
-      if (!nextIsAuthed) {
-        invalidateSession();
-      }
+      if (!session) invalidateSession();
     };
 
     cb();

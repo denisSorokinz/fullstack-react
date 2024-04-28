@@ -1,16 +1,22 @@
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { BASE_NEXT_URL } from "@/constants";
 import {
   DashboardProvider,
   DashboardProviderProps,
 } from "@/contexts/dashboard";
 import { fetchBrands, fetchCarListings, fetchFilters } from "@/lib";
-import { getFavorites, isAuthorizedFor } from "@/lib/actions";
+import {
+  getAuthorizedResource,
+} from "@/lib/actions";
+import { CarListing } from "@/types/listings";
 import Link from "next/link";
 
 async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const filterData = await fetchFilters();
   const listings = (await fetchCarListings()) || [];
-  const favoritesRes = await getFavorites();
+  const favoritesRes = await getAuthorizedResource<{
+    favorites: Array<CarListing["id"]>;
+  }>(`${BASE_NEXT_URL}/users/favorites`);
 
   const brands = (await fetchBrands()) || [];
 
@@ -20,7 +26,7 @@ async function DashboardLayout({ children }: { children: React.ReactNode }) {
     brands,
   };
   if (favoritesRes.success)
-    initProps.favoriteListingIds = favoritesRes.favorites;
+    initProps.favoriteListingIds = favoritesRes.data!.favorites;
 
   // const canViewEditListings = isAuthorizedFor({
   //   action: "view:page",

@@ -16,18 +16,18 @@ const validateToken = (accessToken?: string) => {
   return isTokenValid;
 };
 
-const getSessionData = (token: string) => {
-  const tokenPayload = decode(token);
-  if (!tokenPayload) return null;
+// const getSessionData = (token: string) => {
+//   const tokenPayload = decode(token);
+//   if (!tokenPayload) return null;
 
-  const typed = tokenPayload as AuthJWTPayload;
+//   const typed = tokenPayload as AuthJWTPayload;
 
-  const excludeProperties: Array<keyof AuthJWTPayload> = ["iat", "exp"];
-  const lens = ExcludeLens.from(excludeProperties);
-  const sessionData = lens.view(typed) as Omit<AuthJWTPayload, 'exp' | 'iat'>;
+//   const excludeProperties: Array<keyof AuthJWTPayload> = ["iat", "exp"];
+//   const lens = ExcludeLens.from(excludeProperties);
+//   const sessionData = lens.view(typed) as Omit<AuthJWTPayload, 'exp' | 'iat'>;
 
-  return { ...sessionData };
-};
+//   return { ...sessionData };
+// };
 
 const refreshAccessToken = async (
   refreshToken?: string
@@ -56,4 +56,4 @@ const refreshAccessToken = async (
   return { success: true, nextAccessToken };
 };
 
-export { validateToken, getSessionData, refreshAccessToken };
+export { validateToken, refreshAccessToken };

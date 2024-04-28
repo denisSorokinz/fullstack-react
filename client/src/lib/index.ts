@@ -61,10 +61,17 @@ const fetchFilters = async (filterValues?: FilterValuesType) => {
   return res.data[CarApiOperations.getFilters];
 };
 
-const fetchCarListings = async (filterValues?: Partial<FilterValuesType>) => {
+const fetchCarListings = async (
+  filterValues?: Partial<FilterValuesType>,
+  paginationMeta: { page: number; pageSize: number } = {
+    page: 1,
+    pageSize: 10,
+  }
+) => {
   const activeFilterValues = sanitizeObject(filterValues);
 
-  const searchParams = new URLSearchParams(activeFilterValues as any);
+  const params = { ...activeFilterValues, ...paginationMeta }
+  const searchParams = new URLSearchParams(params as any);
 
   const res = await fetchCarsApi<CarApiOperations.getListings>(
     ENDPOINTS.QUERIES.GET_CAR_LISTINGS,

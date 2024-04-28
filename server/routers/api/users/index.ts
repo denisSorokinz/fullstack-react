@@ -17,12 +17,15 @@ usersRouter.get('/favorites', async (req: Request, res: Response) => {
   const favorites = await prisma.favoriteListing.findMany({ select: { listingId: true }, where: { userId } });
   const mapped = favorites.map((item) => item.listingId);
 
+  console.log('favorites', mapped);
+
   return res.status(200).json({ favorites: mapped });
 });
 
 usersRouter.put('/favorites/:listingId/toggle', async (req: Request, res: Response) => {
   const { id: userId } = (req as any)['user'] as AuthJWTPayload;
   const listingId = Number(req.params['listingId']);
+
 
   if (isNaN(userId) || isNaN(listingId)) return res.sendStatus(400);
 

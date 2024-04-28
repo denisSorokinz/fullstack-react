@@ -13,7 +13,7 @@ import { decode, verify } from "jsonwebtoken";
 import { cookies } from "next/headers";
 import { ExcludeLens } from "./lenses";
 import { AuthStoreState } from "@/stores/auth";
-import { getSessionData, refreshAccessToken, validateToken } from "./auth";
+import { refreshAccessToken, validateToken } from "./auth";
 import { NextResponse } from "next/server";
 import { CarListing } from "@/types/listings";
 import { sleepMs } from "./utils";
@@ -47,10 +47,11 @@ const authenticate = async ({
     httpOnly: true,
   };
 
-  const accessTokenPayload = decode(accessToken) as AuthJWTPayload;
+  const session = decode(accessToken) as AuthJWTPayload;
+  console.log("authenticated-user", session);
   cookies().set("accessToken", accessToken, {
     ...cookieOptions,
-    expires: accessTokenPayload.exp * 1000,
+    expires: session.exp * 1000,
   });
 
   const refreshTokenPayload = decode(refreshToken) as AuthJWTPayload;
@@ -59,33 +60,47 @@ const authenticate = async ({
     expires: refreshTokenPayload.exp * 1000,
   });
 
-  const user = getSessionData(accessToken);
-  return { success: true, user };
+  // const user = getSessionData(accessToken);
+  return { success: true, user: session };
 };
 
-// todo: decouple into validateSession() and refreshSession
-const isAuthenticated = async () => {
+// const isAuthenticated = () => {
+//   const accessToken = cookies().get("accessToken")?.value;
+//   const isAuthenticated = validateToken(accessToken);
+
+//   return isAuthenticated
+// }
+
+const getSession = () => {
   const accessToken = cookies().get("accessToken")?.value;
   const isAuthenticated = validateToken(accessToken);
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated) return null;
+
+  const session = decode(accessToken!) as AuthJWTPayload;
+  return session;
+};
+
+const validateAndRefreshSession = async () => {
+  const session = getSession();
+  if (!session) {
+    console.log("[session-invalid]");
     const refreshToken = cookies().get("refreshToken")?.value;
     const res = await refreshAccessToken(refreshToken);
 
-    if (!res.success) {
-      return false;
-    }
+    if (!res.success) return null;
 
-    const accessTokenPayload = decode(res.nextAccessToken) as AuthJWTPayload;
+    const session = decode(res.nextAccessToken) as AuthJWTPayload;
+    console.log("[session-refreshed]", session);
 
     cookies().set("accessToken", res.nextAccessToken, {
-      expires: accessTokenPayload.exp * 1000,
+      expires: session.exp * 1000,
     });
 
-    return true;
+    return session;
   }
 
-  return true;
+  return session;
 };
 
 const roleToAccessLevel: { [k in UserRole]: number } = {
@@ -96,42 +111,41 @@ const pageViewPermissions: { [k: string]: UserRole } = {
   "/dashboard/*": "USER",
   "/dashboard/edit": "ADMIN",
 };
+
 const isAuthorizedFor = async ({
-  action,
-  payload,
-}: {
-  action: "view:page" | "edit:listing";
-  payload: keyof typeof pageViewPermissions | string;
-}): Promise<{ isAuthorized: boolean; message?: string }> => {
+  shouldRefreshSession = false,
+  ...args
+}: { shouldRefreshSession?: boolean } & (
+  | {
+      action: "view:page";
+      payload: keyof typeof pageViewPermissions | string;
+    }
+  | { action: "edit:listing" }
+)): Promise<{ isAuthorized: boolean; message?: string }> => {
   let result = { isAuthorized: false };
 
-  if (action === "view:page") {
-    const path = payload;
+  if (args.action === "view:page") {
+    const path = args.payload;
     const authorizedRole = pageViewPermissions[path];
     const requiredAccessLevel = roleToAccessLevel[authorizedRole];
 
     if (requiredAccessLevel === undefined) return { isAuthorized: true };
 
-    // todo: replace w/ isAuthenticated
-    const accessToken = cookies().get("accessToken")?.value || "";
-    const isAuthenticated = validateToken(accessToken);
+    const session = shouldRefreshSession
+      ? await validateAndRefreshSession()
+      : getSession();
 
-    console.log({ isAuthenticated });
-
-    if (!isAuthenticated)
+    if (!session)
       return { isAuthorized: false, message: "Please authenticate" };
 
-    const sessionData = getSessionData(accessToken);
-    if (!sessionData)
-      return { isAuthorized: false, message: "Unable to authenticate" };
-
-    console.log({ sessionData });
-
-    const accessLevel = roleToAccessLevel[sessionData.role];
+    const accessLevel = roleToAccessLevel[session.role];
     if (accessLevel >= requiredAccessLevel) result = { isAuthorized: true };
   }
 
-  console.log({ forPath: payload, result });
+  if (args.action === "edit:listing") {
+    const sessionValid = await validateAndRefreshSession();
+    if (!sessionValid) return { isAuthorized: false, message: "no access" };
+  }
 
   return result;
 };
@@ -143,36 +157,44 @@ const logout = () => {
   return { success: true };
 };
 
-// LISTINGS
-const updateListing = async (
-  edited: Pick<CarListing, "id"> & Partial<CarListing>
-) => {
-  const sessionValid = await isAuthenticated();
-  if (!sessionValid) return { success: false, message: "no access" };
+const protectedAction = <T extends <R>(...args: any[]) => any>(fn: T) => {
+  return async (
+    ...args: Parameters<T>
+  ): Promise<Awaited<ReturnType<T>> | { success: false; message: string }> => {
+    const session = await validateAndRefreshSession();
+    if (!session) return { success: false, message: "not authorized" };
 
-  const token = cookies().get("accessToken")!.value;
-
-  const res = await fetch(`${ENDPOINTS.BASE_NEXT_LISTINGS}`, {
-    method: "PUT",
-    headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ ...edited }),
-  });
-  const json =
-    (await res.json()) as CarApiResponse<CarApiOperations.updateListing>;
-
-  if (!json.success) return { ...json };
-
-  return {
-    success: true,
-    listing: json.data[CarApiOperations.updateListing]!,
+    return await fn(...args);
   };
 };
 
-const deleteListing = async (id: CarListing["id"]) => {
-  const sessionValid = await isAuthenticated();
-  if (!sessionValid) return { success: false, message: "no access" };
+// LISTINGS
+const updateListing = protectedAction(
+  async (edited: Pick<CarListing, "id"> & Partial<CarListing>) => {
+    const token = cookies().get("accessToken")?.value;
+    if (!token) return { success: false };
 
-  const token = cookies().get("accessToken")!.value;
+    const res = await fetch(`${ENDPOINTS.BASE_NEXT_LISTINGS}`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ ...edited }),
+    });
+    const json =
+      (await res.json()) as CarApiResponse<CarApiOperations.updateListing>;
+
+    if (!json.success) return { ...json };
+
+    return {
+      success: true,
+      listing: json.data[CarApiOperations.updateListing]!,
+    };
+  }
+);
+
+const deleteListing = protectedAction(async (id: CarListing["id"]) => {
+  // todo
+  const token = cookies().get("accessToken")?.value;
+  if (!token) return { success: false };
 
   const res = await fetch(`${ENDPOINTS.BASE_NEXT_LISTINGS}`, {
     method: "DELETE",
@@ -181,13 +203,11 @@ const deleteListing = async (id: CarListing["id"]) => {
   });
 
   return { success: res.status === 204 };
-};
+});
 
 const toggleListingFavorites = async (listingId: number) => {
-  const sessionValid = await isAuthenticated();
-  if (!sessionValid) return { success: false, message: "no access" };
-
-  const token = cookies().get("accessToken")!.value;
+  const token = cookies().get("accessToken")?.value;
+  if (!token) return { success: false };
 
   const res = await fetch(
     `${BASE_NEXT_URL}/users/favorites/${listingId}/toggle`,
@@ -208,10 +228,10 @@ const toggleListingFavorites = async (listingId: number) => {
 };
 
 const getAuthorizedResource = async <T>(url: string) => {
-  const token = cookies().get("accessToken")?.value;
-  const sessionValid = validateToken(token);
+  const session = getSession();
+  if (!session) return { success: false };
 
-  if (!sessionValid) return { success: false };
+  const token = cookies().get("accessToken")!.value;
 
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
@@ -223,24 +243,24 @@ const getAuthorizedResource = async <T>(url: string) => {
   return { success: true, data };
 };
 
-const getFavorites = async () => {
-  const endpoint = `${BASE_NEXT_URL}/users/favorites`;
+// const getFavorites = async () => {
+//   const endpoint = `${BASE_NEXT_URL}/users/favorites`;
 
-  const res = await getAuthorizedResource<{
-    favorites: Array<CarListing["id"]>;
-  }>(endpoint);
+//   const res = await fetch(endpoint);
+//   if (res.status !== 200) return { success: false, message: await res.text() };
 
-  if (!res.success) return { success: false };
+//   const data = (await res.json()) as { favorites: Array<CarListing["id"]> };
+//   console.log('[getFavorites]', { data });
 
-  return { success: true, favorites: res.data!.favorites };
-};
+//   return { success: true, favorites: data.favorites };
+// };
 
 export {
   authenticate,
   logout,
-  isAuthenticated,
+  validateAndRefreshSession,
   isAuthorizedFor,
-  getFavorites,
+  getAuthorizedResource,
   updateListing,
   deleteListing,
   toggleListingFavorites,

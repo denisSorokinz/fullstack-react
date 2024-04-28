@@ -13,22 +13,18 @@ import {
 } from "@/contexts/dashboard";
 import { ISelectFilter } from "@/types/filters";
 import { getFavorites, isAuthorizedFor } from "@/lib/actions";
-import { getSessionData } from "@/lib/auth";
 import { cookies } from "next/headers";
 
 async function EditListingsPage() {
-  const canView = isAuthorizedFor({
-    action: "view:page",
-    payload: "/dashboard/edit",
-  });
+  // const { isAuthorized: canView, message } = await isAuthorizedFor({
+  //   action: "view:page",
+  //   payload: "/dashboard/edit",
+  // });
 
-  if (!canView) return <h1>No sufficient permissions</h1>;
+  // if (!canView) return <h1>{message || "No sufficient permissions"}</h1>;
 
   const filterData = await fetchFilters();
   const filters = getDefaultFilters(filterData!);
-
-  const sessionData = getSessionData(cookies().get("accessToken")?.value || "");
-  console.log({ sessionData });
 
   return (
     <ProtectedRoute path="/dashboard/edit">

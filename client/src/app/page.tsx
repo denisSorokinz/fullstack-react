@@ -6,10 +6,11 @@ import {
   RANGE_MODIFIERS,
   SingleFilterType,
 } from "../types/filters";
-import { FILTER_SLUGS } from "../constants";
+import { BASE_NEXT_URL, FILTER_SLUGS } from "../constants";
 import HomeContainer from "../containers/Home";
 import { parseFiltersFromSearch, sanitizeFilters } from "@/lib/filters";
-import { getFavorites } from "@/lib/actions";
+import { getAuthorizedResource } from "@/lib/actions";
+import { CarListing } from "@/types/listings";
 
 export default async function Home({
   searchParams,
@@ -26,8 +27,10 @@ export default async function Home({
 
   const listings = await fetchCarListings(filters);
 
-  const favoritesRes = await getFavorites();
-  const favoriteListingIds = (favoritesRes.success && favoritesRes.favorites) || [];
+  const favoritesRes = await getAuthorizedResource<{
+    favorites: Array<CarListing["id"]>;
+  }>(`${BASE_NEXT_URL}/users/favorites`);
+  const favoriteListingIds = (favoritesRes.success && favoritesRes.data?.favorites) || [];
 
   return (
     <HomeContainer

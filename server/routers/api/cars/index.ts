@@ -44,6 +44,13 @@ export type CarApiResponse<T> =
         [CarApiOperations.getBrands]?: T extends CarApiOperations.getBrands ? Array<FilterOption> : undefined;
         [CarApiOperations.getModelsByBrand]?: T extends CarApiOperations.getModelsByBrand ? Array<FilterOption> : undefined;
       };
+      pagination?: T extends CarApiOperations.getListings
+        ? {
+            page: number;
+            pageSize: number;
+            totalItems: number;
+          }
+        : undefined;
     };
 
 riaApiRouter.get('/filters', async (req, res) => {
@@ -78,13 +85,15 @@ riaApiRouter.get('/filters', async (req, res) => {
 });
 
 riaApiRouter.get('/search', async (req, res) => {
+  console.log('search url:', req.url);
+  
   const appliedFilters = (req as ApiRequest).filters;
 
-  let page = Number((req.params as { page?: string }).page) || 0;
-  if (page < 0) page = 0;
+  let page = Number((req.query as { page?: string }).page) || 0;
+  if (page < 1) page = 1;
 
-  let itemsPerPage = Number((req.params as { 'per-page'?: string })['per-page']) || 20;
-  if (itemsPerPage <= 0) itemsPerPage = 20;
+  let pageSize = Number((req.query as { 'page-size'?: string })['page-size']) || 20;
+  if (pageSize < 1) pageSize = 20;
 
   const query = {} as Prisma.ListingWhereInput;
   for (let [filterName, value, rangeModifier] of appliedFilters) {
@@ -106,14 +115,18 @@ riaApiRouter.get('/search', async (req, res) => {
     }
   }
 
-  const listings = await prisma.listing.findMany({ where: query, take: itemsPerPage, skip: page * itemsPerPage });
+  const listings = await prisma.listing.findMany({ where: query, take: pageSize, skip: (page - 1) * pageSize });
 
-  const mapped = listings
-    .map(mapListingFields)
-    .map((item) => ({ ...item, images: item.images.slice(0, 10) }))
-    // .slice(0, 1);
+  const mapped = listings.map(mapListingFields).map((item) => ({ ...item, images: item.images.slice(0, 10) }));
+  // .slice(0, 1);
 
-  res.status(200).json({ success: true, data: { listings: mapped } } as CarApiResponse<CarApiOperations.getListings>);
+  const totalListings = await prisma.listing.count();
+  const pagination = {
+    page,
+    pageSize,
+    totalItems: totalListings,
+  };
+  res.status(200).json({ success: true, data: { listings: mapped }, pagination } as CarApiResponse<CarApiOperations.getListings>);
 });
 
 riaApiRouter.get('/brands', async (req, res) => {

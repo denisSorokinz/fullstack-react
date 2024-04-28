@@ -2,19 +2,21 @@
 
 import AuthForm, { AuthFormData } from "@/components/forms/AuthForm";
 import { AUTH_OPERATIONS } from "@/constants";
+import { useAuthStatus } from "@/hooks/auth";
 import { authenticate } from "@/lib/actions";
 import { useAuthStore } from "@/stores/auth";
-import { useRouter } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 export default function AuthPage() {
   const router = useRouter();
 
   const login = useAuthStore((store) => store.setUser);
+  const isAuthed = useAuthStatus();
 
   const onSubmit = async (formData: AuthFormData, mode: AUTH_OPERATIONS) => {
-    console.log('[onSubmit]');
-    
+    console.log("[onSubmit]");
+
     const res = await authenticate({ type: mode, ...formData });
 
     if (!res.success) {
@@ -22,11 +24,11 @@ export default function AuthPage() {
       return;
     }
 
-    console.log('[before-login]');
-    
+    console.log("[before-login]");
+
     login(res.user);
 
-    // router.push("/")
+    router.push("/");
     // toast.success('Authentication success')
   };
 
@@ -45,6 +47,10 @@ export default function AuthPage() {
       </button>
     </div>
   );
+
+  useEffect(() => {
+    isAuthed && redirect("/");
+  }, [isAuthed]);
 
   return <AuthForm onSubmit={onSubmit} heading={heading} footer={footer} />;
 }
