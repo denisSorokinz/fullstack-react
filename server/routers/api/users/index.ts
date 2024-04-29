@@ -26,7 +26,6 @@ usersRouter.put('/favorites/:listingId/toggle', async (req: Request, res: Respon
   const { id: userId } = (req as any)['user'] as AuthJWTPayload;
   const listingId = Number(req.params['listingId']);
 
-
   if (isNaN(userId) || isNaN(listingId)) return res.sendStatus(400);
 
   const existingUser = await prisma.user.findUnique({ where: { id: userId } });
@@ -41,6 +40,8 @@ usersRouter.put('/favorites/:listingId/toggle', async (req: Request, res: Respon
     await prisma.favoriteListing.delete({ where: { favoritedId: { userId, listingId } } });
   } else {
     await prisma.favoriteListing.create({ data: { userId, listingId } });
+    await prisma.listing.update({ data: { favorited: { connect: { favoritedId: { userId, listingId } } } }, where: { id: listingId } });
+    await prisma.user.update({ data: { favoriteListings: { connect: { favoritedId: { userId, listingId } } } }, where: { id: listingId } });
   }
   const favoriteCount = await prisma.favoriteListing.count({ where: { listingId } });
 
