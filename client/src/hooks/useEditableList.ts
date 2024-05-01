@@ -1,4 +1,5 @@
 import { useOptimistic, useTransition } from "react";
+import toast from "react-hot-toast";
 
 type WithId<T> = T & { id: number };
 type UpdateAction<T> =
@@ -58,7 +59,12 @@ const useEditableList = <T extends { id: number }>(
     startTransition(() => {
       updateUIEntry({ action: "update", payload: nextEntry });
 
-      onUpdate(nextEntry).then((success) => !success && rollback());
+      onUpdate(nextEntry).then((success) => {
+        if (!success) {
+          rollback();
+          return;
+        }
+      });
     });
   };
 
@@ -75,7 +81,14 @@ const useEditableList = <T extends { id: number }>(
     startTransition(() => {
       updateUIEntry({ action: "delete", payload: { id } });
 
-      onDelete(id).then((success) => !success && rollback());
+      onDelete(id).then((success) => {
+        if (!success) {
+          rollback();
+          return;
+        }
+
+        toast.success("Deleted successfully");
+      });
     });
   };
 

@@ -32,15 +32,21 @@ type Props = {
   initialFilters: FilterValuesType;
 };
 const DashboardContent: FC<Props> = ({ initialFilters }) => {
-  const { listings, setListings, pagination, setPagination, onChangePage } = useListingsStore(
-    (store) => ({
-      listings: store.listings,
-      setListings: store.setListings,
-      pagination: store.pagination,
-      setPagination: store.setPagination,
-      onChangePage: store.onChangePage
-    })
-  );
+  const {
+    listings,
+    setListings,
+    pagination,
+    setPagination,
+    onChangePage,
+    selectValue,
+  } = useListingsStore((store) => ({
+    listings: store.listings,
+    setListings: store.setListings,
+    pagination: store.pagination,
+    setPagination: store.setPagination,
+    onChangePage: store.onChangePage,
+    selectValue: store.selectValue,
+  }));
 
   const { ...dashboardStore } = useDashboardStore((store) => store);
 
@@ -114,7 +120,9 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
 
       if (!success) return false;
 
-      const nextListings = listings.filter((l) => l.id !== listingId);
+      const nextListings = selectValue("listings").filter(
+        (l) => l.id !== listingId
+      );
       setListings(nextListings);
 
       return true;
@@ -159,7 +167,7 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
         onEdit={updateListEntry}
         onDelete={deleteListEntry}
       />
-       <Pagination
+      <Pagination
         currentPage={pagination.page}
         totalItems={pagination.totalItems}
         onPaginate={(nextPage) => onChangePage(nextPage, filters)}

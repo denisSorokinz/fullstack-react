@@ -81,7 +81,7 @@ const FlipBox: FC<Props> = ({
       <div
         className={cn(
           "preserve-3d relative h-full w-full rounded-md bg-slate-300 p-2 shadow-md shadow-slate-700 transition-all duration-500",
-          isFlipped && "rotate-y-180 shadow-none"
+          isFlipped && "rotate-x-180 shadow-none"
         )}
         ref={containerRef}
       >
@@ -92,7 +92,7 @@ const FlipBox: FC<Props> = ({
           {front}
         </div>
         <div
-          className="rotate-y-180 backface-hidden absolute left-2 top-2 w-[calc(100%_-_16px)] overflow-hidden bg-slate-200 p-2 shadow-md"
+          className="rotate-x-180 backface-hidden absolute left-2 top-2 w-[calc(100%_-_16px)] overflow-hidden bg-slate-200 p-2 shadow-md"
           ref={backRef}
         >
           {back}

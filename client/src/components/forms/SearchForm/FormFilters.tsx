@@ -96,7 +96,7 @@ const FormFilters: FC<Props> = ({ filterData, filters, onFilterChange }) => {
         // TODO: handle type checkbox
 
         return (
-          <div key={filter.slug} className="flex flex-col gap-1">
+          <div key={filter.slug} className="flex flex-col gap-1 min-w-72">
             <label htmlFor={filter.slug} className="text-primary">
               {filter.displayName}
             </label>
