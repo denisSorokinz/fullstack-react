@@ -7,6 +7,7 @@ import { authenticate } from "@/lib/actions";
 import { useAuthStore } from "@/stores/auth";
 import { redirect, useRouter } from "next/navigation";
 import { useEffect } from "react";
+import toast from "react-hot-toast";
 
 export default function AuthPage() {
   const router = useRouter();
@@ -15,21 +16,18 @@ export default function AuthPage() {
   const isAuthed = useAuthStatus();
 
   const onSubmit = async (formData: AuthFormData, mode: AUTH_OPERATIONS) => {
-    console.log("[onSubmit]");
-
     const res = await authenticate({ type: mode, ...formData });
 
     if (!res.success) {
       // todo: show error toast
+      toast.error(res.message!);
       return;
     }
 
-    console.log("[before-login]");
-
-    login(res.user);
+    login(res.user!);
 
     router.push("/");
-    // toast.success('Authentication success')
+    toast.success("Logged in");
   };
 
   const heading = (

@@ -4,7 +4,7 @@ import { FILTERS_INITIAL, ENDPOINTS, FiltersType } from '../../../constants';
 import PrismaClientSingleton from '../../../prisma/client';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { FILTER_NAMES, FilterOption, RANGE_MODIFIERS } from '../../../types/filters';
-import { ApiRequest } from '../../../types/http';
+import { ApiRequest, AuthJWTPayload } from '../../../types/http';
 import { ExcludeLens } from '../../../lib/lenses';
 import { UnwrapPromise } from '@prisma/client/runtime/library';
 import { fetchDocumentByUrl } from '../../../lib/dom';
@@ -32,6 +32,7 @@ export enum CarApiOperations {
   getBrands = 'brands',
   getModelsByBrand = 'models',
 }
+type PaginatedResponse = CarApiOperations.getListings;
 export type CarApiResponse<T> =
   | { success: false; message?: string; error?: ZodError }
   | {
@@ -44,7 +45,7 @@ export type CarApiResponse<T> =
         [CarApiOperations.getBrands]?: T extends CarApiOperations.getBrands ? Array<FilterOption> : undefined;
         [CarApiOperations.getModelsByBrand]?: T extends CarApiOperations.getModelsByBrand ? Array<FilterOption> : undefined;
       };
-      pagination?: T extends CarApiOperations.getListings
+      pagination?: T extends PaginatedResponse
         ? {
             page: number;
             pageSize: number;
@@ -86,7 +87,7 @@ riaApiRouter.get('/filters', async (req, res) => {
 
 riaApiRouter.get('/search', async (req, res) => {
   console.log('search url:', req.url);
-  
+
   const appliedFilters = (req as ApiRequest).filters;
 
   let page = Number((req.query as { page?: string }).page) || 0;
@@ -120,7 +121,7 @@ riaApiRouter.get('/search', async (req, res) => {
   const mapped = listings.map(mapListingFields).map((item) => ({ ...item, images: item.images.slice(0, 10) }));
   // .slice(0, 1);
 
-  const totalListings = await prisma.listing.count();
+  const totalListings = await prisma.listing.count({ where: query });
   const pagination = {
     page,
     pageSize,
@@ -187,13 +188,17 @@ riaApiRouter.put('/listings/:id', authGuard, validateEditListingRequest, async (
 
 riaApiRouter.delete('/listings/:id', authGuard, validateDeleteListingRequest, async (req, res) => {
   const params = req.params as { id: string };
-  const id = Number(params.id);
+  const listingId = Number(params.id);
 
-  const listingExists = await prisma.listing.findUnique({ where: { id } });
+  const listingExists = await prisma.listing.findUnique({ where: { id: listingId } });
   if (!listingExists)
     return res.status(400).send({ success: false, message: 'listing does not exist' } as CarApiResponse<CarApiOperations.updateListing>);
 
-  await prisma.listing.delete({ where: { id } });
+  const { id: userId } = (req as any).user as AuthJWTPayload;
+
+  // await prisma.listing.update({ data: { favorited: { disconnect: { favoritedId: { userId, listingId } } } }, where: { id: listingId } });
+  // await prisma.user.update({ data: { favoriteListings: { disconnect: { favoritedId: { userId, listingId } } } }, where: { id: userId } });
+  await prisma.listing.delete({ where: { id: listingId } });
 
   return res.sendStatus(204);
 });

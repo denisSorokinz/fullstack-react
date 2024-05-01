@@ -17,7 +17,8 @@ import { fetchFilters } from "@/lib";
 
 type SearchFormProps = {
   filterData: FiltersType;
-  initialFilters: FilterValuesType;
+  filters: FilterValuesType;
+  setFilters: React.Dispatch<React.SetStateAction<FilterValuesType>>;
   onSubmit?: (formData: Partial<FilterValuesType>) => void;
   onChange?: (formData: FilterValuesType, isDependencyFilter: boolean) => void;
   onReset?: () => void;
@@ -25,18 +26,12 @@ type SearchFormProps = {
 
 const SearchForm: FC<SearchFormProps> = ({
   filterData,
-  initialFilters,
+  filters,
+  setFilters,
   onSubmit,
   onChange,
   onReset,
 }) => {
-  const defaultFilters = useMemo(
-    () => getDefaultFilters(filterData, initialFilters),
-    [filterData, initialFilters]
-  );
-
-  const [filters, setFilters] = useState(defaultFilters);
-
   const handleFilterChange = async (
     changedFilterName: FILTER_NAMES,
     value: number | number[]
@@ -97,7 +92,7 @@ const SearchForm: FC<SearchFormProps> = ({
 
   return (
     <form
-      className="m-auto mb-12 grid max-w-2xl grid-cols-2 gap-x-6 gap-y-4"
+      className="mx-auto mb-12 grid max-w-2xl grid-cols-2 gap-x-6 gap-y-4"
       onSubmit={handleSubmit}
     >
       <FormFilters
@@ -106,17 +101,25 @@ const SearchForm: FC<SearchFormProps> = ({
         onFilterChange={handleFilterChange}
       />
 
-      <button
-        type="submit"
-        className="col-span-full m-auto rounded-md bg-accent bg-slate-600 px-4 py-2 text-slate-200 transition hover:brightness-90"
-      >
-        Пошук
-      </button>
-      {onReset && (
-        <button onClick={handleReset} type="button">
-          Очистити фільтри
-        </button>
-      )}
+      <div className="col-span-full flex justify-end gap-2">
+        {onSubmit && (
+          <button
+            type="submit"
+            className="rounded-md bg-slate-700 px-4 py-2 text-slate-100 transition hover:brightness-90"
+          >
+            Пошук
+          </button>
+        )}
+        {onReset && (
+          <button
+            onClick={handleReset}
+            type="button"
+            className="block rounded-md bg-slate-700 p-2 text-slate-100 transition hover:brightness-90"
+          >
+            Очистити фільтри
+          </button>
+        )}
+      </div>
     </form>
   );
 };

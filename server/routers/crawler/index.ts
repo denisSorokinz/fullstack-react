@@ -134,7 +134,7 @@ const crawlerRouter = Router();
 
 crawlerRouter.get('/', async (req, res) => {
   // const url = `https://auto.ria.com/uk/search/?indexName=auto&brand.id%5B0%5D=79&country.import.usa.not=-1&price.currency=1&abroad.not=0&custom.not=1&page=0&size=100`;
-  const url = 'https://auto.ria.com/uk/legkovie/bmw/?page=3';
+  const url = 'https://auto.ria.com/uk/search/?indexName=auto,order_auto,newauto_search&categories.main.id=1&brand.id%5B0%5D=48&country.import.usa.not=-1&price.currency=1&abroad.not=0&custom.not=1&page=0&size=100';
 
   const document = await fetchDocumentByUrl(url);
 

@@ -40,8 +40,6 @@ usersRouter.put('/favorites/:listingId/toggle', async (req: Request, res: Respon
     await prisma.favoriteListing.delete({ where: { favoritedId: { userId, listingId } } });
   } else {
     await prisma.favoriteListing.create({ data: { userId, listingId } });
-    await prisma.listing.update({ data: { favorited: { connect: { favoritedId: { userId, listingId } } } }, where: { id: listingId } });
-    await prisma.user.update({ data: { favoriteListings: { connect: { favoritedId: { userId, listingId } } } }, where: { id: listingId } });
   }
   const favoriteCount = await prisma.favoriteListing.count({ where: { listingId } });
 

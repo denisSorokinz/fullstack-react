@@ -3,7 +3,14 @@
 import CarListingList from "@/components/carListings/List";
 import SearchForm from "@/components/forms/SearchForm";
 import { FilterOption, FilterValuesType } from "@/types/filters";
-import { FC, useCallback, useContext, useEffect } from "react";
+import {
+  FC,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { CarListing } from "@/types/listings";
 import { fetchCarListings, fetchFilters, updateListingsEntry } from "@/lib";
 import { debounce, debounceFetcher } from "@/lib/utils";
@@ -15,6 +22,9 @@ import {
 } from "@/lib/actions";
 import useEditableList from "@/hooks/useEditableList";
 import Link from "next/link";
+import { useListingsStore } from "@/stores/listings";
+import { getDefaultFilters } from "@/lib/filters";
+import Pagination from "@/components/carListings/Pagination";
 
 const debouncedUpdate = debounceFetcher(updateListing);
 
@@ -22,20 +32,31 @@ type Props = {
   initialFilters: FilterValuesType;
 };
 const DashboardContent: FC<Props> = ({ initialFilters }) => {
-  const {
-    listings,
-    setListings,
-    selectValue,
-    favoriteListingIds,
-    setFavorites,
-    ...dashboardStore
-  } = useDashboardStore((store) => store);
+  const { listings, setListings, pagination, setPagination, onChangePage } = useListingsStore(
+    (store) => ({
+      listings: store.listings,
+      setListings: store.setListings,
+      pagination: store.pagination,
+      setPagination: store.setPagination,
+      onChangePage: store.onChangePage
+    })
+  );
+
+  const { ...dashboardStore } = useDashboardStore((store) => store);
 
   // filter form
-  const handleSubmit = async (filters: Partial<FilterValuesType>) => {
-    const nextListings = await fetchCarListings(filters);
-    setListings(nextListings!);
-  };
+  const defaultFilters = useMemo(
+    () => getDefaultFilters(dashboardStore.filterData!, initialFilters),
+    [dashboardStore.filterData!, initialFilters]
+  );
+  const [filters, setFilters] = useState(defaultFilters);
+  // const handleSubmit = async (filters: Partial<FilterValuesType>) => {
+  //   const { listings: nextListings, pagination: nextPagination } =
+  //     (await fetchCarListings(filters, { ...pagination, page: 1 }))!;
+
+  //   setListings(nextListings!);
+  //   setPagination(nextPagination!);
+  // };
   const handleChange = useCallback(
     debounce(
       1500,
@@ -45,8 +66,11 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
           dashboardStore.setFilterData(nextFilterData!);
         }
 
-        const nextListings = await fetchCarListings(filters);
+        const { listings: nextListings, pagination: nextPagination } =
+          (await fetchCarListings(filters, pagination))!;
+
         setListings(nextListings!);
+        setPagination(nextPagination!);
       }
     ),
     []
@@ -55,24 +79,11 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
     const nextFilterData = await fetchFilters();
     dashboardStore.setFilterData(nextFilterData!);
 
-    const nextListings = await fetchCarListings();
+    const { listings: nextListings, pagination: nextPagination } =
+      (await fetchCarListings(undefined, { ...pagination, page: 1 }))!;
+
     setListings(nextListings!);
-  };
-
-  const handleToggleFavorite = async (listingId: number) => {
-    const { success, message, data } = await toggleListingFavorites(listingId);
-
-    if (!(success && data)) {
-      console.log("[toggleFavorite failed]:", message);
-      return;
-    }
-
-    const nextFavorites = selectValue("favoriteListingIds").filter(
-      (id) => id !== listingId
-    );
-    if (data.isFavorited) nextFavorites.push(listingId);
-
-    setFavorites(nextFavorites);
+    setPagination(nextPagination!);
   };
 
   const updateCb = async (
@@ -103,9 +114,7 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
 
       if (!success) return false;
 
-      const nextListings = selectValue("listings").filter(
-        (l) => l.id !== listingId
-      );
+      const nextListings = listings.filter((l) => l.id !== listingId);
       setListings(nextListings);
 
       return true;
@@ -133,11 +142,12 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
   );
 
   return (
-    <div className="flex flex-[4] flex-col justify-between">
+    <div className="flex flex-[4] flex-col">
       <SearchForm
         filterData={dashboardStore.filterData!}
-        initialFilters={initialFilters}
-        onSubmit={handleSubmit}
+        filters={filters}
+        setFilters={setFilters}
+        // onSubmit={handleSubmit}
         onChange={handleChange}
         onReset={handleReset}
       />
@@ -145,12 +155,15 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
         listings={optimisticListings}
         editingId={dashboardStore.editListingOptions.editingListingId}
         allowEdit={true}
-        favoriteListingIds={favoriteListingIds}
         onToggleEditing={dashboardStore.onToggleEditing}
         onEdit={updateListEntry}
         onDelete={deleteListEntry}
-        onToggleFavorite={handleToggleFavorite}
-        view="list"
+      />
+       <Pagination
+        currentPage={pagination.page}
+        totalItems={pagination.totalItems}
+        onPaginate={(nextPage) => onChangePage(nextPage, filters)}
+        pageSize={pagination.pageSize}
       />
     </div>
   );

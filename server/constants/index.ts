@@ -65,10 +65,10 @@ const FILTERS_INITIAL: FiltersType = {
   },
   [FILTER_NAMES.MILEAGE]: {
     slug: 'mileage',
-    displayName: 'Пробіг',
+    displayName: 'Пробіг (т. км.)',
     type: 'range',
     from: 0,
-    to: 1_000_000,
+    to: 500,
     _queries: {
       [Prisma.ModelName['Listing']]: {
         columnName: 'mileage',

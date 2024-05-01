@@ -12,7 +12,7 @@ const authRouter = Router();
 
 const prisma = PrismaClientSingleton.getInstance();
 
-const ACCESS_TOKEN_EXPIRY = '1h';
+const ACCESS_TOKEN_EXPIRY = '4h';
 const REFRESH_TOKEN_EXPIRY = '10h';
 
 authRouter.post('/signup', validateAuthRequest, async (req, res) => {

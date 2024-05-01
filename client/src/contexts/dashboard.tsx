@@ -20,8 +20,8 @@ export const DashboardProvider: FC<PropsWithChildren<DashboardProviderProps>> = 
   children,
   initProps,
 }) => {
-  const store = useRef<DashboardStore>(null);
-  if (!store.current) (store as any).current = createDashboardStore(initProps);
+  const store = useRef<DashboardStore>();
+  if (!store.current) (store).current = createDashboardStore(initProps);
 
   return (
     <DashboardContext.Provider value={store.current}>

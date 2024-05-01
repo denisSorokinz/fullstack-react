@@ -1,42 +1,51 @@
 "use client";
 
-import { FC, useMemo, useState } from "react";
+import { FC, useEffect, useMemo, useState } from "react";
 import { type CarListing as CarListingType } from "@/types/listings";
 import ViewSwitcher from "./ViewSwitcher";
 import { motion, AnimatePresence } from "framer-motion";
 import { DashboardStoreState } from "@/stores/dashboard";
 import EditableCarListing from "./EditableCarListing";
 import { getArmyScore } from "@/lib";
+import { useListingsStore } from "@/stores/listings";
+import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../shadcn/select";
 
 export type ListViewType = "cards" | "list";
 
 type Props = {
   listings: CarListingType[];
-} & {
   allowEdit?: boolean;
   editingId?: number | null;
   onToggleEditing?: DashboardStoreState["onToggleEditing"];
-  favoriteListingIds?: Array<CarListingType["id"]>;
-  view?: ListViewType;
   onEdit?: (
     listing: Pick<CarListingType, "id"> & Partial<CarListingType>
   ) => void;
   onDelete?: (listingId: CarListingType["id"]) => void;
-  onToggleFavorite?: (listingId: CarListingType["id"]) => void;
 };
 const CarListingList: FC<Props> = ({
   listings,
-  favoriteListingIds,
   allowEdit,
   editingId,
   onToggleEditing,
   onEdit,
   onDelete,
-  onToggleFavorite,
-  view = 'cards'
 }) => {
-  // const [view, setView] = useState<ListViewType>("cards");
-  console.log({ favoriteListingIds });
+  const {
+    favoriteIds,
+    view,
+    pagination,
+    onToggleFavorite,
+    onChangePage,
+    setListings,
+    selectValue,
+  } = useListingsStore((store) => store);
 
   if (listings.length === 0)
     return <h3>Авто за вказаними критеріями не знайдено</h3>;
@@ -82,7 +91,7 @@ const CarListingList: FC<Props> = ({
                   listing={l}
                   view={view}
                   isEditing={editingId === l.id}
-                  isFavorited={favoriteListingIds?.includes(l.id)}
+                  isFavorited={favoriteIds?.includes(l.id)}
                   armyScore={getArmyScore(l)}
                   allowEdit={allowEdit}
                   onToggleEditing={() => {
@@ -111,7 +120,7 @@ const CarListingList: FC<Props> = ({
                   listing={l}
                   view={view}
                   isEditing={editingId === l.id}
-                  isFavorited={favoriteListingIds?.includes(l.id)}
+                  isFavorited={favoriteIds?.includes(l.id)}
                   armyScore={getArmyScore(l)}
                   allowEdit={allowEdit}
                   onToggleEditing={() => {

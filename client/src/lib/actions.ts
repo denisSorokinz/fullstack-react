@@ -39,7 +39,11 @@ const authenticate = async ({
 
   const data = (await res.json()) as AuthResponse;
 
-  if (!data.success) return data;
+  if (!data.success)
+    return {
+      success: false,
+      message: data.message || data.error?.message || `Unable to authenticate`,
+    };
 
   const { accessToken, refreshToken } = data.tokens;
   const cookieOptions = {

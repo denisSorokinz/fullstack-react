@@ -4,6 +4,7 @@ import { FilterOption, FilterValuesType, FiltersType } from "../types/filters";
 import { decodeHtmlString, sanitizeObject } from "@/lib/utils";
 import { CarApiOperations, CarApiResponse } from "@/types/http";
 import { DashboardStoreState } from "@/stores/dashboard";
+import { ListingsStoreState } from "@/stores/listings";
 
 const fetchCarsApi = async <T>(
   endpoint: string,
@@ -63,14 +64,16 @@ const fetchFilters = async (filterValues?: FilterValuesType) => {
 
 const fetchCarListings = async (
   filterValues?: Partial<FilterValuesType>,
-  paginationMeta: { page: number; pageSize: number } = {
+  paginationMeta: Pick<ListingsStoreState['pagination'], 'page' | 'pageSize'> = {
     page: 1,
     pageSize: 10,
   }
 ) => {
   const activeFilterValues = sanitizeObject(filterValues);
 
-  const params = { ...activeFilterValues, ...paginationMeta }
+  const params = { ...activeFilterValues, ...paginationMeta };
+  console.log({params});
+  
   const searchParams = new URLSearchParams(params as any);
 
   const res = await fetchCarsApi<CarApiOperations.getListings>(
@@ -82,7 +85,10 @@ const fetchCarListings = async (
   );
   if (!res.success) return null;
 
-  return res.data[CarApiOperations.getListings];
+  return {
+    listings: res.data[CarApiOperations.getListings],
+    pagination: res.pagination,
+  };
 };
 
 const fetchListingDetails = async (id: string) => {

@@ -5,22 +5,36 @@ import {
   DashboardStore,
   createDashboardStore,
 } from "@/stores/dashboard";
-import { ListingsStore, ListingsStoreState } from "@/stores/listings";
-import { FilterOption } from "@/types/filters";
+import {
+  ListingsStore,
+  ListingsStoreState,
+  createListingsStore,
+} from "@/stores/listings";
 import { FC, PropsWithChildren, createContext, useRef } from "react";
 
 export const ListingsContext = createContext<ListingsStore | null>(null);
 
-export type ListingsProviderProps = { initProps: Partial<ListingsStoreState> };
+export type ListingsProviderProps = {
+  initProps?: Partial<ListingsStoreState>;
+};
 export const ListingsProvider: FC<PropsWithChildren<ListingsProviderProps>> = ({
-  children,
   initProps,
+  children,
 }) => {
-  const store = useRef<ListingsStore>(null);
-  if (!store.current) (store as any).current = createDashboardStore(initProps);
+  const storeRef = useRef<ListingsStore>();
+
+  // storeRef.current =
+  //   storeRef.current || store || createListingsStore(initProps);
+
+  console.log("[render provider]", { refStore: storeRef.current, initProps });
+  if (!storeRef.current) {
+    console.log("init", { initProps });
+
+    storeRef.current = createListingsStore(initProps);
+  }
 
   return (
-    <ListingsContext.Provider value={store.current}>
+    <ListingsContext.Provider value={storeRef.current}>
       {children}
     </ListingsContext.Provider>
   );

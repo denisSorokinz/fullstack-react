@@ -10,6 +10,14 @@ export enum CarApiOperations {
   getModelsByBrand = "models",
   updateListing = "listing",
 }
+
+type PaginatedResponse = CarApiOperations.getListings;
+export type PaginationMeta = {
+  page: number;
+  pageSize: number;
+  totalItems: number;
+};
+
 export type CarApiResponse<T> =
   | { success: false; message: string }
   | {
@@ -34,6 +42,7 @@ export type CarApiResponse<T> =
           ? CarListing
           : undefined;
       };
+      pagination?: T extends PaginatedResponse ? PaginationMeta : undefined;
     };
 
 export type AuthResponse =

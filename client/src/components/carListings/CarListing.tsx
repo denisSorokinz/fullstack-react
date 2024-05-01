@@ -9,6 +9,8 @@ import { getArmyScore } from "@/lib";
 import CardBadgeList from "./CardBadge";
 import FlipBox, { flipClassName } from "../FlipBox";
 import { cn } from "@/lib/utils";
+import { useAuthStatus } from "@/hooks/auth";
+import { useAuthStore } from "@/stores/auth";
 
 export type CarListingProps = {
   listing: CarListingType;
@@ -24,6 +26,8 @@ const CarListing: FC<CarListingProps> = ({
   isFavorited,
   onToggleFavorite,
 }) => {
+  const { user } = useAuthStore((store) => ({ user: store.user }));
+
   const title = `${listing.brand} ${listing.model}`;
 
   let content;
@@ -77,13 +81,16 @@ const CarListing: FC<CarListingProps> = ({
         </Link>
         <div className="absolute right-2 top-2 flex h-8 items-center gap-2">
           {armyBadge}
-          {onToggleFavorite && (
+          {user && onToggleFavorite && (
             <button
               className={cn(
                 "group/heart cursor-pointer rounded-lg bg-slate-100 p-1 transition-colors hover:bg-slate-200",
                 { "bg-red-500 hover:bg-red-600": isFavorited }
               )}
-              onClick={() => onToggleFavorite(listing.id)}
+              onClick={() => {
+                console.log("[toggle]", onToggleFavorite);
+                onToggleFavorite(listing.id);
+              }}
             >
               <i>
                 <Heart
@@ -106,7 +113,7 @@ const CarListing: FC<CarListingProps> = ({
 
   if (view === "list")
     content = (
-      <div className="h-full overflow-hidden rounded-md bg-slate-200 shadow-lg transition hover:bg-slate-300 hover:shadow-xl prose-a:no-underline relative">
+      <div className="relative h-full overflow-hidden rounded-md bg-slate-200 shadow-lg transition hover:bg-slate-300 hover:shadow-xl prose-a:no-underline">
         <Link
           prefetch={false}
           href={`/listing/${listing.slug}`}
@@ -149,7 +156,7 @@ const CarListing: FC<CarListingProps> = ({
         </Link>
         <div className="absolute right-2 top-2 flex h-8 items-center gap-2">
           {armyBadge}
-          {onToggleFavorite && (
+          {user && onToggleFavorite && (
             <button
               className={cn(
                 "group/heart cursor-pointer rounded-lg bg-slate-100 p-1 transition-colors hover:bg-slate-200",

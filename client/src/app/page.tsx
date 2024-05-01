@@ -25,19 +25,22 @@ export default async function Home({
   // clear un-existing filter values
   const sanitizedFilters = sanitizeFilters(filterData!, filters);
 
-  const listings = await fetchCarListings(filters);
+  const { listings, pagination } = (await fetchCarListings(filters))!;
+  console.log({ first: listings![0] });
 
   const favoritesRes = await getAuthorizedResource<{
     favorites: Array<CarListing["id"]>;
   }>(`${BASE_NEXT_URL}/users/favorites`);
-  const favoriteListingIds = (favoritesRes.success && favoritesRes.data?.favorites) || [];
+  const favoriteListingIds =
+    (favoritesRes.success && favoritesRes.data?.favorites) || [];
 
   return (
     <HomeContainer
       initialFilterData={filterData!}
       initialFilters={sanitizedFilters}
-      listings={listings!}
-      favoriteListingIds={favoriteListingIds}
+      initialListings={listings!}
+      favoriteIds={favoriteListingIds}
+      paginationMeta={pagination!}
     />
   );
 }

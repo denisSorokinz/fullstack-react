@@ -5,8 +5,12 @@ import { useAuthStore } from "@/stores/auth";
 import Header from "./";
 import Link from "next/link";
 import { logout } from "@/lib/actions";
+import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 const Auth: FC = () => {
+  const router = useRouter();
+
   const { user, invalidateSession } = useAuthStore((state) => ({
     user: state.user,
     invalidateSession: state.invalidateSession,
@@ -15,6 +19,9 @@ const Auth: FC = () => {
   const handleLogout = () => {
     logout();
     invalidateSession();
+
+    router.push("/");
+    toast.success("Logged out");
   };
 
   if (!user)
