@@ -2,6 +2,7 @@ import Modals from "@/components/modals";
 import Header from "../components/Header";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
+import Theme from "@/components/Theme";
 
 export const metadata = {
   title: "Create Next App",
@@ -19,6 +20,7 @@ export default function RootLayout({
         <Header />
         <Modals />
         <Toaster reverseOrder={true} />
+        <Theme />
         <main className="container mx-auto px-2 py-8">{children}</main>
       </body>
     </html>

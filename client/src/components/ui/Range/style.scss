@@ -6,7 +6,7 @@
 .range-input {
   -webkit-appearance: none; 
   appearance: none;
-  height: 2px;
+  height: 12px;
   width: 100%;
   position: absolute;
   background-color: #C6C6C6;
@@ -51,5 +51,6 @@
   &.range-input--from {
     height: 0;
     z-index: 1;
+    bottom: 4px;
   }
 }

@@ -6,6 +6,8 @@ import Heart from "./Heart";
 import Mileage from "./Mileage";
 import Cards from "./Cards";
 import List from "./List";
+import LightTheme from "./LightTheme";
+import DarkTheme from "./DarkTheme";
 
 export type SVGProps = {
   width?: number;
@@ -16,4 +18,15 @@ export type SVGProps = {
   color?: string;
 };
 
-export { LoadingSpinner, Trash, Mileage, Cards, List, Helmet, Pen, Heart };
+export {
+  LoadingSpinner,
+  Trash,
+  Mileage,
+  Cards,
+  List,
+  Helmet,
+  Pen,
+  Heart,
+  LightTheme,
+  DarkTheme,
+};

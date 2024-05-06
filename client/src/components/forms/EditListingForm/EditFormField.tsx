@@ -2,10 +2,8 @@
 
 import { FormControl, FormItem, FormLabel } from "@/components/shadcn/form";
 import { cn } from "@/lib/utils";
-import { FC, forwardRef, memo, useEffect } from "react";
-import {
-  EditListingFormData,
-} from ".";
+import { FC, forwardRef, memo, useEffect, useMemo } from "react";
+import { EditListingFormData } from ".";
 import { Control, ControllerRenderProps } from "react-hook-form";
 import { Textarea } from "@/components/shadcn/textarea";
 import { useDashboardStore } from "@/stores/dashboard";
@@ -19,34 +17,74 @@ import {
   SelectValue,
 } from "@/components/shadcn/select";
 import EditSelect from "./EditSelect";
-import { EditableField } from "@/types/forms";
+import { EditableField, EditableSelectField } from "@/types/forms";
 import { editableListingFields } from "@/constants";
+import { CarListing } from "@/types/listings";
 
 type Props = {
   field: Omit<ControllerRenderProps<EditListingFormData>, "ref">;
   fieldMeta: EditableField;
   name: keyof typeof editableListingFields;
-  className?: string;
   parentValue?: number;
-  control: Control<EditListingFormData>
+  className?: string;
+  control: Control<EditListingFormData>;
+  clearDependency?: (() => void) | null;
+  populateModelOptions?: (brandId: number) => void;
+  selectOptions?: FilterOption[];
 };
 
 const EditFormField = forwardRef<HTMLElement, Props>(
-  ({ field, fieldMeta, name, className, parentValue }, ref) => {
-    const { filterData } = useDashboardStore((store) => ({
+  (
+    {
+      field,
+      fieldMeta,
+      name,
+      className,
+      parentValue,
+      populateModelOptions,
+      clearDependency,
+    },
+    ref
+  ) => {
+    const brandId = Number(parentValue || -1);
+
+    const { filterData, editOptions } = useDashboardStore((store) => ({
       filterData: store.filterData!,
+      editOptions: store.editListingOptions,
     }));
+
+    // logger(debugId, { selectOptions });
 
     let input: JSX.Element = <></>;
 
+    let selectOptions: any;
     if (fieldMeta.type === "select") {
+      selectOptions = editOptions[fieldMeta.dashboardStoreOptionsKey];
+
+      if (!Array.isArray(selectOptions)) {
+        selectOptions =
+          (selectOptions as Map<CarListing["brandId"], FilterOption[]>).get(
+            brandId
+          ) || [];
+      }
+
       input = (
         <EditSelect
           key={`${name}-select`}
           value={field.value as number}
-          parentValue={parentValue}
           fieldMeta={fieldMeta}
-          onChange={field.onChange}
+          options={selectOptions || []}
+          onChange={async (nextValue: string) => {
+            if (populateModelOptions) {
+              console.log("populating options for:", nextValue);
+              await populateModelOptions(+nextValue);
+            }
+            // populateModelOptions && ();
+
+            field.onChange(nextValue);
+
+            clearDependency && clearDependency();
+          }}
         />
       );
     }
@@ -78,7 +116,6 @@ const EditFormField = forwardRef<HTMLElement, Props>(
     if (fieldMeta.type === "textarea") {
       input = <Textarea rows={10} {...field} ref={ref as any} />;
     }
-
     return (
       <FormItem className={className}>
         <FormLabel>{fieldMeta.displayName}</FormLabel>

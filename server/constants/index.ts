@@ -44,7 +44,7 @@ const FILTERS_INITIAL: FiltersType = {
     displayName: 'Ціна',
     type: 'range',
     from: 0,
-    to: 1_000_000,
+    to: 100_000,
     _queries: {
       [Prisma.ModelName['Listing']]: {
         columnName: 'price',
@@ -55,7 +55,7 @@ const FILTERS_INITIAL: FiltersType = {
     slug: 'year',
     displayName: 'Рік',
     type: 'range',
-    from: 1930,
+    from: 1990,
     to: new Date().getFullYear(),
     _queries: {
       [Prisma.ModelName['Listing']]: {

@@ -32,13 +32,7 @@ const Home: FC<Props> = ({
   paginationMeta,
 }) => {
   return (
-    <ListingsProvider
-      initProps={{
-        listings: initialListings,
-        favoriteIds,
-        pagination: paginationMeta,
-      }}
-    >
+    <ListingsProvider>
       <HomepageContent
         initialFilterData={initialFilterData}
         initialFilters={initialFilters}

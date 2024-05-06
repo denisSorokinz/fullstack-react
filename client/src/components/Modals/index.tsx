@@ -11,8 +11,6 @@ const Modals = () => {
     hideModal: state.hideModal,
   }));
 
-  console.log({ activeModal });
-
   const handleOpenChange = (isOpened: boolean) =>
     !isOpened && setTimeout(hideModal, 1000);
 

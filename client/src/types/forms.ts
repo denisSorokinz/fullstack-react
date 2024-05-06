@@ -1,3 +1,4 @@
+import { EditListingFormData } from "@/components/forms/EditListingForm";
 import { DashboardStoreState } from "@/stores/dashboard";
 
 // Edit listing form
@@ -9,6 +10,8 @@ type EditableSelectField = {
   type: "select";
   displayName: string;
   dashboardStoreOptionsKey: keyof DashboardStoreState["editListingOptions"];
+  dependencyField?: keyof EditListingFormData;
+  parentField?: keyof EditListingFormData;
 };
 type EditableField = EditableTextField | EditableSelectField;
 

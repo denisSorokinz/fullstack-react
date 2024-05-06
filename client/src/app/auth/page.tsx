@@ -19,7 +19,6 @@ export default function AuthPage() {
     const res = await authenticate({ type: mode, ...formData });
 
     if (!res.success) {
-      // todo: show error toast
       toast.error(res.message!);
       return;
     }
@@ -31,15 +30,15 @@ export default function AuthPage() {
   };
 
   const heading = (
-    <h3 className="text-center text-base font-semibold leading-6 text-gray-900">
+    <h1 className="text-center text-2xl font-semibold leading-6 text-slate-700 dark:text-slate-200">
       Authorize to get access
-    </h3>
+    </h1>
   );
   const footer = (
-    <div className="bg-gray-50 p-4 sm:flex sm:flex-row-reverse">
+    <div className="p-4">
       <button
         type="submit"
-        className="inline-flex w-full items-center justify-center rounded-md bg-purple-500 px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm hover:bg-purple-600 sm:ml-3 sm:w-auto"
+        className="mx-auto block rounded-md bg-blue-500 px-4 py-2 font-bold text-slate-100 shadow-sm transition-colors hover:bg-blue-600"
       >
         Submit
       </button>

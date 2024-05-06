@@ -1,5 +1,8 @@
 "use client";
 
+import { BASE_NEXT_URL } from "@/constants";
+import { fetchCarListings } from "@/lib";
+import { getAuthorizedResource } from "@/lib/actions";
 import {
   DashboardStoreState,
   DashboardStore,
@@ -10,28 +13,59 @@ import {
   ListingsStoreState,
   createListingsStore,
 } from "@/stores/listings";
-import { FC, PropsWithChildren, createContext, useRef } from "react";
+import { CarListing } from "@/types/listings";
+import {
+  FC,
+  PropsWithChildren,
+  createContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 export const ListingsContext = createContext<ListingsStore | null>(null);
 
-export type ListingsProviderProps = {
-  initProps?: Partial<ListingsStoreState>;
-};
-export const ListingsProvider: FC<PropsWithChildren<ListingsProviderProps>> = ({
-  initProps,
-  children,
-}) => {
+export const ListingsProvider: FC<PropsWithChildren> = ({ children }) => {
+  const [listings, setListings] = useState<ListingsStoreState["listings"]>([]);
+  const [pagination, setPagination] = useState<
+    ListingsStoreState["pagination"]
+  >({ page: 1, pageSize: 20, totalItems: 0 });
+  const [favoriteIds, setFavoriteIds] = useState<
+    ListingsStoreState["favoriteIds"]
+  >([]);
+
+  const initProps: Partial<ListingsStoreState> = {
+    listings,
+    favoriteIds,
+    pagination,
+    view: "list",
+  };
+
+  useEffect(() => {
+    const cb = async () => {
+      const { listings: nextListings, pagination: nextPagination } =
+        (await fetchCarListings())!;
+      setListings(nextListings!);
+      setPagination(nextPagination!);
+
+      const res = await getAuthorizedResource<{
+        favorites: Array<CarListing["id"]>;
+      }>(`${BASE_NEXT_URL}/users/favorites`);
+      const nextFavoriteIds = res.success && res.data?.favorites;
+      if (nextFavoriteIds) setFavoriteIds(nextFavoriteIds);
+    };
+
+    cb();
+  }, []);
+
+  useEffect(() => {
+    if (storeRef.current) {
+      storeRef.current.setState((store) => ({ ...store, ...initProps }));
+    }
+  }, [listings, pagination, favoriteIds]);
+
   const storeRef = useRef<ListingsStore>();
-
-  // storeRef.current =
-  //   storeRef.current || store || createListingsStore(initProps);
-
-  console.log("[render provider]", { refStore: storeRef.current, initProps });
-  if (!storeRef.current) {
-    console.log("init", { initProps });
-
-    storeRef.current = createListingsStore(initProps);
-  }
+  if (!storeRef.current) storeRef.current = createListingsStore(initProps);
 
   return (
     <ListingsContext.Provider value={storeRef.current}>

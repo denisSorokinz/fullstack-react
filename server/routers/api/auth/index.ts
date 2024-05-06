@@ -17,7 +17,7 @@ const REFRESH_TOKEN_EXPIRY = '10h';
 
 authRouter.post('/signup', validateAuthRequest, async (req, res) => {
   const { email, password } = req.body as { email: string; password: string };
-  const userExists = !!(await prisma.user.findUnique({ where: { email, password } }));
+  const userExists = !!(await prisma.user.findUnique({ where: { email } }));
 
   if (userExists) return res.status(409).send({ success: false, message: 'User already exists' });
 

@@ -1,6 +1,5 @@
 "use server";
 
-import { UserRole } from "./../../../server/types/http";
 import { AuthFormData } from "@/components/forms/AuthForm";
 import { AUTH_OPERATIONS, BASE_NEXT_URL, ENDPOINTS } from "@/constants";
 import {
@@ -8,6 +7,7 @@ import {
   AuthResponse,
   CarApiOperations,
   CarApiResponse,
+  UserRole,
 } from "@/types/http";
 import { decode, verify } from "jsonwebtoken";
 import { cookies } from "next/headers";
@@ -196,7 +196,6 @@ const updateListing = protectedAction(
 );
 
 const deleteListing = protectedAction(async (id: CarListing["id"]) => {
-  // todo
   const token = cookies().get("accessToken")?.value;
   if (!token) return { success: false };
 

@@ -56,13 +56,13 @@ const AuthForm: FC<Props> = ({ onSubmit, heading, footer }) => {
         {heading}
         <div className="flex flex-col gap-1">
           <label
-            className="block text-sm font-bold text-gray-700"
+            className="block text-sm font-bold text-slate-700 dark:text-slate-200"
             htmlFor="email"
           >
             Email:
           </label>
           <input
-            className={`w-full border px-3 py-2 text-sm leading-tight text-gray-700 ${
+            className={`w-full border px-3 py-2 text-sm leading-tight text-slate-700 ${
               errors.email && "border-red-500"
             } focus:shadow-outline appearance-none rounded focus:outline-none`}
             id="email"
@@ -79,13 +79,13 @@ const AuthForm: FC<Props> = ({ onSubmit, heading, footer }) => {
         <div className="flex flex-col gap-2 md:flex-row">
           <div className="flex flex-col gap-1">
             <label
-              className="block text-sm font-bold text-gray-700"
+              className="block text-sm font-bold text-slate-700 dark:text-slate-200"
               htmlFor="password"
             >
               Password
             </label>
             <input
-              className={`w-full border px-3 py-2 text-sm leading-tight text-gray-700 ${
+              className={`w-full border px-3 py-2 text-sm leading-tight text-slate-700 ${
                 errors.password && "border-red-500"
               } focus:shadow-outline appearance-none rounded focus:outline-none`}
               id="password"
@@ -101,13 +101,13 @@ const AuthForm: FC<Props> = ({ onSubmit, heading, footer }) => {
           </div>
           <div className="flex flex-col gap-1">
             <label
-              className="block text-sm font-bold text-gray-700"
+              className="block text-sm font-bold text-slate-700 dark:text-slate-200"
               htmlFor="c_password"
             >
               Confirm Password
             </label>
             <input
-              className={`w-full border px-3 py-2 text-sm leading-tight text-gray-700 ${
+              className={`w-full border px-3 py-2 text-sm leading-tight text-slate-700 ${
                 errors.confirmPassword && "border-red-500"
               } focus:shadow-outline appearance-none rounded focus:outline-none`}
               id="c_password"
@@ -123,12 +123,12 @@ const AuthForm: FC<Props> = ({ onSubmit, heading, footer }) => {
           </div>
         </div>
         <hr />
-        <span className="text-purple-500">
+        <strong className="text-slate-700 dark:text-slate-200">
           {mode === AUTH_OPERATIONS.LOGIN && (
             <>
               Don&apos;t have an account?{" "}
               <button
-                className="underline underline-offset-4 hover:text-purple-600"
+                className="underline underline-offset-4 transition-colors hover:text-blue-600"
                 onClick={toggleMode}
               >
                 Sign Up
@@ -139,14 +139,14 @@ const AuthForm: FC<Props> = ({ onSubmit, heading, footer }) => {
             <>
               Already have an account?{" "}
               <button
-                className="underline underline-offset-4 hover:text-purple-600"
+                className="underline underline-offset-4 transition-colors hover:text-blue-600"
                 onClick={toggleMode}
               >
                 Login
               </button>
             </>
           )}
-        </span>
+        </strong>
       </div>
       {footer}
     </form>

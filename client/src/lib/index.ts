@@ -1,5 +1,11 @@
 import { ENDPOINTS } from "../constants";
-import { CarListingExpanded, type CarListing } from "../types/listings";
+import {
+  ArmyScoreMeta,
+  CarListingExpanded,
+  LISTING_BODY_TYPES,
+  armyScoreGrade,
+  type CarListing,
+} from "../types/listings";
 import { FilterOption, FilterValuesType, FiltersType } from "../types/filters";
 import { decodeHtmlString, sanitizeObject } from "@/lib/utils";
 import { CarApiOperations, CarApiResponse } from "@/types/http";
@@ -64,7 +70,10 @@ const fetchFilters = async (filterValues?: FilterValuesType) => {
 
 const fetchCarListings = async (
   filterValues?: Partial<FilterValuesType>,
-  paginationMeta: Pick<ListingsStoreState['pagination'], 'page' | 'pageSize'> = {
+  paginationMeta: Pick<
+    ListingsStoreState["pagination"],
+    "page" | "pageSize"
+  > = {
     page: 1,
     pageSize: 10,
   }
@@ -72,8 +81,6 @@ const fetchCarListings = async (
   const activeFilterValues = sanitizeObject(filterValues);
 
   const params = { ...activeFilterValues, ...paginationMeta };
-  console.log({params});
-  
   const searchParams = new URLSearchParams(params as any);
 
   const res = await fetchCarsApi<CarApiOperations.getListings>(
@@ -137,10 +144,15 @@ const mapListingToUI = (
 ) => {
   const { name: brand } = brands.find((brand) => brand.id === listing.brandId)!;
 
+
+
+  // todo: debug
+  let model;
   const brandModels = models.get(listing.brandId)!;
-  const { name: model } = brandModels.find(
-    (model) => model.id === listing.modelId
-  )!;
+  if (brandModels) {
+    const item = brandModels.find((model) => model.id === listing.modelId);
+    model = item ? item.name : null;
+  }
 
   return { ...listing, brand, model } as CarListing;
 };
@@ -165,17 +177,28 @@ const updateListingsEntry = (
   return nextState;
 };
 
-const getArmyScore = ({ price, mileage, year }: CarListing) => {
-  if (mileage === undefined) return 0;
+const getArmyScore = ({
+  price,
+  mileage,
+  year,
+  bodyType,
+}: CarListing): ArmyScoreMeta | undefined => {
+  if (mileage === undefined) return;
 
   // todo: adjust data & remove
   mileage = mileage * 1000 < 1_000_000 ? mileage * 1000 : mileage;
 
-  let score = 10;
+  let scoreMeta: ArmyScoreMeta = {
+    year: "good",
+    price: "good",
+    mileage: "good",
+    bodyType: "good",
+    score: 10,
+  };
 
   const THRESHOLDS: {
     [k in keyof CarListing]?: {
-      [k in "exclude" | "bad" | "okay" | "good"]: number;
+      [k in armyScoreGrade]?: number;
     };
   } = {
     mileage: {
@@ -188,7 +211,7 @@ const getArmyScore = ({ price, mileage, year }: CarListing) => {
       exclude: 20_000,
       bad: 15_000,
       okay: 10_000,
-      good: 8_000,
+      good: 9_000,
     },
     year: {
       exclude: 1990,
@@ -198,37 +221,50 @@ const getArmyScore = ({ price, mileage, year }: CarListing) => {
     },
   };
 
-  if (price >= THRESHOLDS.price!.exclude) {
-    score -= 10;
-  } else if (price >= THRESHOLDS.price!.bad) {
-    score -= 4;
-  } else if (price >= THRESHOLDS.price!.okay) {
-    score -= 2;
-  } else if (price >= THRESHOLDS.price!.good) {
-    score -= 1;
+  if (price >= THRESHOLDS.price!.exclude!) {
+    scoreMeta.price = "exclude";
+    scoreMeta.score -= 10;
+  } else if (price >= THRESHOLDS.price!.bad!) {
+    scoreMeta.price = "bad";
+    scoreMeta.score -= 4;
+  } else if (price >= THRESHOLDS.price!.okay!) {
+    scoreMeta.price = "okay";
+    scoreMeta.score -= 2;
+  } else if (price >= THRESHOLDS.price!.good!) {
+    scoreMeta.score -= 1;
   }
 
-  if (mileage >= THRESHOLDS.mileage!.exclude) {
-    score -= 10;
-  } else if (mileage >= THRESHOLDS.mileage!.bad) {
-    score -= 4;
-  } else if (mileage >= THRESHOLDS.mileage!.okay) {
-    score -= 2;
-  } else if (mileage >= THRESHOLDS.mileage!.good) {
-    score -= 1;
+  if (mileage >= THRESHOLDS.mileage!.exclude!) {
+    scoreMeta.mileage = "exclude";
+    scoreMeta.score -= 10;
+  } else if (mileage >= THRESHOLDS.mileage!.bad!) {
+    scoreMeta.mileage = "bad";
+    scoreMeta.score -= 4;
+  } else if (mileage >= THRESHOLDS.mileage!.okay!) {
+    scoreMeta.mileage = "okay";
+    scoreMeta.score -= 2;
+  } else if (mileage >= THRESHOLDS.mileage!.good!) {
+    scoreMeta.score -= 1;
   }
 
-  if (year <= THRESHOLDS.year!.exclude) {
-    score -= 10;
-  } else if (year <= THRESHOLDS.year!.bad) {
-    score -= 4;
-  } else if (year <= THRESHOLDS.year!.good) {
-    score = score;
-  } else if (year >= THRESHOLDS.year!.okay) {
-    score -= 1;
+  if (year <= THRESHOLDS.year!.exclude!) {
+    scoreMeta.mileage = "exclude";
+    scoreMeta.score -= 10;
+  } else if (year <= THRESHOLDS.year!.bad!) {
+    scoreMeta.mileage = "bad";
+    scoreMeta.score -= 4;
+  } else if (year >= THRESHOLDS.year!.okay!) {
+    scoreMeta.score -= 1;
   }
 
-  return Math.max(score, 0);
+  if (bodyType === LISTING_BODY_TYPES.OTHER) {
+    scoreMeta.bodyType = "bad";
+    scoreMeta.score = Math.round(scoreMeta.score / 2);
+  }
+
+  scoreMeta.score = Math.max(scoreMeta.score, 0);
+
+  return scoreMeta;
 };
 
 export {

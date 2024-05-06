@@ -23,7 +23,6 @@ function FavoritesPage() {
   const favorites = responses
     .map((res) => res.success && res.data[CarApiOperations.getListing])
     .filter(Boolean) as CarListingExpanded[];
-  console.log({ favorites });
 
   return (
     <div className="flex-1">

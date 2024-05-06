@@ -14,16 +14,12 @@ const ProtectedRoute: FC<PropsWithChildren<Props>> = ({ path, children }) => {
   // const isAuthenticated = useAuthStatus();
   useEffect(() => {
     const cb = async () => {
-      console.log('view:', path)
-
       const { isAuthorized: nextIsAuthorized, message: nextMessage } =
         await isAuthorizedFor({
           action: "view:page",
           payload: path,
           shouldRefreshSession: true,
         });
-
-      console.log({ nextIsAuthorized, nextMessage });
 
       setIsAuthorized(nextIsAuthorized);
       nextMessage && setMessage(nextMessage);

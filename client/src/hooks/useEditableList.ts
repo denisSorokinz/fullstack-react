@@ -1,3 +1,5 @@
+"use client";
+
 import { useOptimistic, useTransition } from "react";
 import toast from "react-hot-toast";
 
@@ -17,8 +19,11 @@ const useEditableList = <T extends { id: number }>(
   list: Array<T>,
   onUpdate: (nextEntry: WithId<Partial<T>>) => Promise<boolean>,
   onDelete: (entryId: number) => Promise<boolean>,
-  replaceStateEntry: (state: T[], nextValue: WithId<Partial<T>>) => T[]
+  replaceStateEntry: (state: T[], nextValue: WithId<Partial<T>>) => T[],
+  validateEntry: (entry: WithId<Partial<T>>) => boolean
 ) => {
+  console.log({ list });
+
   const [isPending, startTransition] = useTransition();
 
   const [uiList, updateUIEntry] = useOptimistic<WithId<T>[], UpdateAction<T>>(

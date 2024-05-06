@@ -28,20 +28,25 @@ const useBatchFetcher = <T>(
       }
 
       setLoading(true);
-      for (let batch of urlBatches) {
-        const requests = batch.map((url) => fetch(url, { signal }));
-        pendingRequests.push(...requests);
 
-        const responses = await Promise.all(requests);
-        const data = await Promise.all<T>(responses.map((res) => res.json()));
+      try {
+        for (let batch of urlBatches) {
+          const requests = batch.map((url) => fetch(url, { signal }));
+          pendingRequests.push(...requests);
 
-        nextData = nextData.concat(data);
-        pendingRequests = [];
+          const responses = await Promise.all(requests);
+          const data = await Promise.all<T>(responses.map((res) => res.json()));
 
-        await sleepMs(delay);
+          nextData = nextData.concat(data);
+          pendingRequests = [];
+
+          await sleepMs(delay);
+        }
+        startTransition(() => setData(nextData));
+        setLoading(false);
+      } catch (err) {
+        console.log("error fetching batch:", err);
       }
-      startTransition(() => setData(nextData));
-      setLoading(false);
     };
 
     fetcher();

@@ -5,11 +5,10 @@ import { useAuthStore } from "@/stores/auth";
 import { FilterValuesType, FiltersType } from "@/types/filters";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { FC, useEffect, useMemo, useState } from "react";
-import { decodeHtmlString, sanitizeObject } from "../../../../server/lib/utils";
 import SearchForm from "@/components/forms/SearchForm";
 import CarListingList from "@/components/carListings/List";
 import { useListingsStore } from "@/stores/listings";
-import { cn } from "@/lib/utils";
+import { cn, decodeHtmlString, sanitizeObject } from "@/lib/utils";
 import { getDefaultFilters } from "@/lib/filters";
 import Pagination from "@/components/carListings/Pagination";
 
@@ -66,7 +65,7 @@ const HomepageContent: FC<Props> = ({ initialFilterData, initialFilters }) => {
   const handleReset = () => {
     router.push(`/`);
   };
-
+  
   useEffect(
     () => void (searchParams.get("auth") === "logout" && invalidateSession()),
     [searchParams]

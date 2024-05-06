@@ -23,6 +23,7 @@ type Actions = {
     nextPage: State["pagination"]["page"],
     filters?: Partial<FilterValuesType>
   ) => void;
+  selectListings: () => State["listings"];
   selectValue: <T extends keyof State>(key: T) => State[T];
 };
 
@@ -77,6 +78,7 @@ export const createListingsStore = (initProps?: Partial<State>) => {
 
       return set({ pagination: nextPaginationMeta, listings: nextListings });
     },
+    selectListings: () => get().listings,
     selectValue: (key) => get()[key],
   }));
 };

@@ -2,7 +2,7 @@
 
 import CarListingList from "@/components/carListings/List";
 import SearchForm from "@/components/forms/SearchForm";
-import { FilterOption, FilterValuesType } from "@/types/filters";
+import { FILTER_NAMES, FilterOption, FilterValuesType } from "@/types/filters";
 import {
   FC,
   useCallback,
@@ -11,7 +11,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { CarListing } from "@/types/listings";
+import { CarListing, LISTING_BODY_TYPES } from "@/types/listings";
 import { fetchCarListings, fetchFilters, updateListingsEntry } from "@/lib";
 import { debounce, debounceFetcher } from "@/lib/utils";
 import { DashboardStoreState, useDashboardStore } from "@/stores/dashboard";
@@ -23,8 +23,9 @@ import {
 import useEditableList from "@/hooks/useEditableList";
 import Link from "next/link";
 import { useListingsStore } from "@/stores/listings";
-import { getDefaultFilters } from "@/lib/filters";
+import { getDefaultFilters, validateRange } from "@/lib/filters";
 import Pagination from "@/components/carListings/Pagination";
+import { z } from "zod";
 
 const debouncedUpdate = debounceFetcher(updateListing);
 
@@ -33,27 +34,41 @@ type Props = {
 };
 const DashboardContent: FC<Props> = ({ initialFilters }) => {
   const {
-    listings,
     setListings,
     pagination,
     setPagination,
     onChangePage,
-    selectValue,
+    selectListings,
   } = useListingsStore((store) => ({
     listings: store.listings,
     setListings: store.setListings,
     pagination: store.pagination,
     setPagination: store.setPagination,
     onChangePage: store.onChangePage,
-    selectValue: store.selectValue,
+    selectListings: store.selectListings,
   }));
+  const listings = selectListings();
 
-  const { ...dashboardStore } = useDashboardStore((store) => store);
+  const {
+    filterData,
+    setFilterData,
+    editListingOptions,
+    setIsPendingEdit,
+    onToggleEditing,
+    populateModelOptions,
+  } = useDashboardStore((store) => ({
+    filterData: store.filterData,
+    setFilterData: store.setFilterData,
+    editListingOptions: store.editListingOptions,
+    setIsPendingEdit: store.setIsPendingEdit,
+    onToggleEditing: store.onToggleEditing,
+    populateModelOptions: store.populateModelOptions,
+  }));
 
   // filter form
   const defaultFilters = useMemo(
-    () => getDefaultFilters(dashboardStore.filterData!, initialFilters),
-    [dashboardStore.filterData!, initialFilters]
+    () => getDefaultFilters(filterData!, initialFilters),
+    [filterData!, initialFilters]
   );
   const [filters, setFilters] = useState(defaultFilters);
   // const handleSubmit = async (filters: Partial<FilterValuesType>) => {
@@ -69,7 +84,7 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
       async (filters: FilterValuesType, isDependencyFilter: boolean) => {
         if (isDependencyFilter) {
           const nextFilterData = await fetchFilters(filters);
-          dashboardStore.setFilterData(nextFilterData!);
+          setFilterData(nextFilterData!);
         }
 
         const { listings: nextListings, pagination: nextPagination } =
@@ -83,7 +98,7 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
   );
   const handleReset = async () => {
     const nextFilterData = await fetchFilters();
-    dashboardStore.setFilterData(nextFilterData!);
+    setFilterData(nextFilterData!);
 
     const { listings: nextListings, pagination: nextPagination } =
       (await fetchCarListings(undefined, { ...pagination, page: 1 }))!;
@@ -104,7 +119,7 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
       const nextListings = updateListingsEntry(
         listings,
         edited,
-        dashboardStore.editListingOptions
+        editListingOptions
       );
       setListings(nextListings);
 
@@ -120,15 +135,41 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
 
       if (!success) return false;
 
-      const nextListings = selectValue("listings").filter(
-        (l) => l.id !== listingId
-      );
+      const nextListings = listings.filter((l) => l.id !== listingId);
       setListings(nextListings);
 
       return true;
     } catch (err: any) {
       return false;
     }
+  };
+  const validateEntryCb = (
+    entry: Pick<CarListing, "id"> & Partial<CarListing>
+  ) => {
+    // create zod schema for listing validity
+    //  (required fields specified + all fields validation)
+    const listingSchema = z.object({
+      id: z.number(),
+      brandId: z.number(),
+      modelId: z.number(),
+      year: validateRange(filterData!, FILTER_NAMES.YEAR),
+      mileage: validateRange(filterData!, FILTER_NAMES.MILEAGE),
+      price: validateRange(filterData!, FILTER_NAMES.PRICE),
+      brand: z.string(),
+      model: z.string(),
+      description: z.string().optional(),
+      createdAt: z.date().optional(),
+      slug: z.string(),
+      thumbnailUrl: z.string(),
+      bodyType: z.enum(["SUV", "OTHER"]),
+      // ...rest
+    });
+
+    // check entry against schema
+    const parsed = listingSchema.safeParse(entry);
+
+    // return flag
+    return parsed.success;
   };
 
   // edit listings
@@ -137,22 +178,29 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
     updateListEntry,
     deleteListEntry,
     transitionPending,
-  } = useEditableList(listings, updateCb, deleteCb, (listings, nextListing) =>
-    updateListingsEntry(
-      listings,
-      nextListing,
-      dashboardStore.editListingOptions
-    )
-  );
-  useEffect(
-    () => dashboardStore.setIsPendingEdit(transitionPending),
-    [transitionPending]
+  } = useEditableList(
+    listings,
+    updateCb,
+    deleteCb,
+    (listings, nextListing) =>
+      updateListingsEntry(listings, nextListing, editListingOptions),
+    validateEntryCb
   );
 
+  useEffect(() => {
+    const cb = async () => {
+      const res = (await fetchCarListings(defaultFilters))!;
+      setListings(res.listings!);
+    };
+
+    cb();
+  }, []);
+  useEffect(() => setIsPendingEdit(transitionPending), [transitionPending]);
+
   return (
-    <div className="flex flex-[4] flex-col">
+    <div className="flex flex-1 flex-col">
       <SearchForm
-        filterData={dashboardStore.filterData!}
+        filterData={filterData!}
         filters={filters}
         setFilters={setFilters}
         // onSubmit={handleSubmit}
@@ -161,9 +209,12 @@ const DashboardContent: FC<Props> = ({ initialFilters }) => {
       />
       <CarListingList
         listings={optimisticListings}
-        editingId={dashboardStore.editListingOptions.editingListingId}
+        editingId={editListingOptions.editingListingId}
         allowEdit={true}
-        onToggleEditing={dashboardStore.onToggleEditing}
+        onToggleEditing={async (listing) => {
+          await populateModelOptions(listing.brandId);
+          onToggleEditing(listing);
+        }}
         onEdit={updateListEntry}
         onDelete={deleteListEntry}
       />

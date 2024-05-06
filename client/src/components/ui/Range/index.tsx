@@ -30,8 +30,8 @@ function fillSlider(
     to right,
     ${"#e3e3e3"} 0%,
     ${"#e3e3e3"} ${(fromPosition / rangeDistance) * 100}%,
-    ${"#00f"} ${(fromPosition / rangeDistance) * 100}%,
-    ${"#00f"} ${(toPosition / rangeDistance) * 100}%, 
+    ${"#3b82f6"} ${(fromPosition / rangeDistance) * 100}%,
+    ${"#3b82f6"} ${(toPosition / rangeDistance) * 100}%, 
     ${"#e3e3e3"} ${(toPosition / rangeDistance) * 100}%, 
     ${"#e3e3e3"} 100%)
   `;

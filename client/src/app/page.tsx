@@ -26,7 +26,6 @@ export default async function Home({
   const sanitizedFilters = sanitizeFilters(filterData!, filters);
 
   const { listings, pagination } = (await fetchCarListings(filters))!;
-  console.log({ first: listings![0] });
 
   const favoritesRes = await getAuthorizedResource<{
     favorites: Array<CarListing["id"]>;

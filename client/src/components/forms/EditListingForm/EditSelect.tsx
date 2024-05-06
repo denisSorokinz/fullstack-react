@@ -15,30 +15,15 @@ type Props = {
   onChange: (...event: any[]) => void;
   value: FilterOption["id"];
   fieldMeta: EditableSelectField;
+  options: FilterOption[]
   parentValue?: number;
 };
 const EditSelect: FC<Props> = ({
   onChange,
   value,
+  options,
   fieldMeta,
-  parentValue: brandId,
 }) => {
-  const { editOptions } = useDashboardStore((store) => ({
-    editOptions: store.editListingOptions,
-  }));
-
-  const options = useMemo(() => {
-    let optns = editOptions[fieldMeta.dashboardStoreOptionsKey];
-
-    if (!Array.isArray(optns)) {
-      optns =
-        (optns as Map<CarListing["brandId"], FilterOption[]>).get(
-          brandId || -1
-        ) || [];
-    }
-
-    return optns;
-  }, [editOptions, brandId]);
 
   let content: JSX.Element = <></>;
   let disabled = true;
@@ -74,10 +59,4 @@ const EditSelect: FC<Props> = ({
   );
 };
 
-export default memo(
-  EditSelect,
-  (
-    { parentValue: prevParentValue, value: prevValue },
-    { parentValue: nextParentValue, value: nextValue }
-  ) => prevParentValue === nextParentValue && prevValue === nextValue
-);
+export default EditSelect;

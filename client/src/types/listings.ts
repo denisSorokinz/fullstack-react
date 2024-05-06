@@ -9,6 +9,7 @@ interface ICarListing {
   slug: string;
   thumbnailUrl?: string;
   description?: string;
+  bodyType: LISTING_BODY_TYPES;
 }
 
 type CarListing = ICarListing & {
@@ -21,4 +22,24 @@ type CarListingExpanded = CarListing & {
   images?: string[];
 };
 
-export { type CarListing, type CarListingExpanded };
+enum LISTING_BODY_TYPES {
+  "SUV" = "SUV",
+  "OTHER" = "OTHER",
+}
+
+type armyScoreGrade = "good" | "okay" | "bad" | "exclude";
+type ArmyScoreMeta = {
+  score: number;
+  price: armyScoreGrade;
+  mileage: armyScoreGrade;
+  year: armyScoreGrade;
+  bodyType: "good" | "bad";
+};
+
+export {
+  type CarListing,
+  type CarListingExpanded,
+  type armyScoreGrade,
+  type ArmyScoreMeta,
+  LISTING_BODY_TYPES,
+};

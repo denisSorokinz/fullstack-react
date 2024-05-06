@@ -45,59 +45,67 @@ function jsonToCsv(jsonData: any) {
 const parseListings = async (document: Document) => {
   const carNodes = document.querySelectorAll('#searchResults .ticket-item:not(.paid)');
   const listings = await Promise.all(
-    Array.from(carNodes).map((carNode) => {
-      const dataNode = carNode.querySelector<HTMLElement>('.hide')!;
-      const {
-        id,
-        markName: brand,
-        modelName: model,
-        year,
-        linkToView,
-      } = dataNode.dataset as {
-        id: string;
-        markName: string;
-        modelName: string;
-        year: string;
-        linkToView: string;
-      };
+    Array.from(carNodes)
+      .map((carNode) => {
+        const dataNode = carNode.querySelector<HTMLElement>('.hide');
+        if (!(dataNode && dataNode.dataset)) return;
 
-      const dateNode = carNode.querySelector<HTMLSpanElement>('span[data-add-date]')!;
-      const { addDate } = dateNode.dataset as { addDate: string };
-      const createdAt = new Date(addDate);
+        const {
+          id,
+          markName: brand,
+          modelName: model,
+          year,
+          linkToView,
+        } = dataNode.dataset as {
+          id: string;
+          markName: string;
+          modelName: string;
+          year: string;
+          linkToView: string;
+        };
 
-      const priceNode = carNode.querySelector<HTMLElement>('.price-ticket')!;
-      const { mainPrice: price } = priceNode.dataset as { mainPrice: string };
+        let createdAt;
+        const dateNode = carNode.querySelector<HTMLSpanElement>('span[data-add-date]')!;
+        if (dateNode) {
+          const { addDate } = dateNode.dataset as { addDate: string };
+          createdAt = new Date(addDate);
+        }
 
-      const mileageNode = carNode.querySelector<HTMLElement>('.js-race')!;
-      mileageNode.querySelector('i')?.remove();
-      const mileageInnerHtml = mileageNode.innerHTML.trim();
-      const digits = mileageInnerHtml.match(/\d+/);
-      const mileage = digits ? digits[0] : mileageInnerHtml;
+        const priceNode = carNode.querySelector<HTMLElement>('.price-ticket')!;
+        const { mainPrice: price } = priceNode.dataset as { mainPrice: string };
 
-      const description = carNode.querySelector<HTMLParagraphElement>('.descriptions-ticket > span')?.innerHTML;
-      if (!description) console.log({ id, model, year });
+        const mileageNode = carNode.querySelector<HTMLElement>('.js-race')!;
+        mileageNode.querySelector('i')?.remove();
+        const mileageInnerHtml = mileageNode.innerHTML.trim();
+        const digits = mileageInnerHtml.match(/\d+/);
+        const mileage = digits ? digits[0] : mileageInnerHtml;
 
-      const sourceNode = carNode.querySelector<HTMLImageElement>('img')!;
-      const { src: thumbnailUrl } = sourceNode;
+        const description = carNode.querySelector<HTMLParagraphElement>('.descriptions-ticket > span')?.innerHTML;
+        if (!description) console.log({ id, model, year });
 
-      const slug = linkToView.replace(/(\/|\.html)/g, '');
+        const sourceNode = carNode.querySelector<HTMLImageElement>('img')!;
+        const { src: thumbnailUrl } = sourceNode;
 
-      const carListing = {
-        id: +id,
-        brand,
-        model,
-        year: +year,
-        price: +price,
-        mileage: +mileage,
-        createdAt,
-        thumbnailUrl,
-        slug,
-        description,
-        images: [],
-      } as ListingDetails;
+        const slug = linkToView.replace(/(\/|\.html)/g, '');
 
-      return carListing;
-    })
+        const carListing = {
+          id: +id,
+          brand,
+          model,
+          year: +year,
+          price: +price,
+          mileage: +mileage,
+          createdAt,
+          thumbnailUrl,
+          slug,
+          description,
+          images: [],
+          bodyType: 'OTHER',
+        } as ListingDetails;
+
+        return carListing;
+      })
+      .filter(Boolean) as ListingDetails[]
   );
 
   for (let item of listings) {
@@ -134,7 +142,7 @@ const crawlerRouter = Router();
 
 crawlerRouter.get('/', async (req, res) => {
   // const url = `https://auto.ria.com/uk/search/?indexName=auto&brand.id%5B0%5D=79&country.import.usa.not=-1&price.currency=1&abroad.not=0&custom.not=1&page=0&size=100`;
-  const url = 'https://auto.ria.com/uk/search/?indexName=auto,order_auto,newauto_search&categories.main.id=1&brand.id%5B0%5D=48&country.import.usa.not=-1&price.currency=1&abroad.not=0&custom.not=1&page=0&size=100';
+  const url = 'https://auto.ria.com/uk/search/?indexName=auto,order_auto,newauto_search&body.id%5B0%5D=3&body.id%5B6%5D=6&body.id%5B7%5D=7&year%5B0%5D.lte=2012&categories.main.id=1&country.import.usa.not=-1&price.currency=1&abroad.not=0&custom.not=1&page=2&size=100';
 
   const document = await fetchDocumentByUrl(url);
 

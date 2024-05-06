@@ -45,19 +45,25 @@ model Model {
   listings Listing[]
 }
 
+enum BodyTypes {
+  SUV
+  OTHER
+}
+
 model Listing {
   id           Int               @id @default(autoincrement())
   year         Int
   price        Int
   mileage      Int?
-  createdAt    DateTime
+  createdAt    DateTime?
   description  String?
   slug         String            @unique
   thumbnailUrl String?
-  images       String[]
+  bodyType     BodyTypes         @default(OTHER)
   brand        Brand             @relation(fields: [brandId], references: [id])
   model        Model             @relation(fields: [modelId], references: [id])
   brandId      Int
   modelId      Int
   favorited    FavoriteListing[]
+  images       String[]
 }

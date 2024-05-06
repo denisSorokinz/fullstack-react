@@ -24,7 +24,7 @@ const Pagination: FC<Props> = ({
 
   return (
     <div className="mt-4 flex flex-col items-center justify-center gap-2">
-      <ul className="flex gap-2">
+      <ul className="flex gap-2 flex-wrap">
         {new Array(totalPages).fill(null).map((_, pageIdx) => (
           <li key={pageIdx}>
             <button

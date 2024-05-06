@@ -60,11 +60,13 @@ const editableListingFields = {
     type: "select",
     displayName: "Марка",
     dashboardStoreOptionsKey: "brands",
+    dependencyField: "modelId",
   },
   modelId: {
     type: "select",
     displayName: "Модель",
     dashboardStoreOptionsKey: "models",
+    parentField: "brandId",
   },
   year: {
     type: "number",

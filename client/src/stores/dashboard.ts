@@ -22,6 +22,7 @@ type Actions = {
   setIsPendingEdit: (
     nextIsPending: State["editListingOptions"]["isPending"]
   ) => void;
+  populateModelOptions: (brandId: number) => void;
   onToggleEditing: (listing: CarListing) => void;
   updateStore: (nextValue: Partial<State>) => void;
 };
@@ -57,20 +58,28 @@ const createDashboardStore = (
     },
     onToggleEditing: async (listing) => {
       const options = get().editListingOptions;
+
       const nextOptions = {
         ...options,
         editingListingId:
           options.editingListingId !== listing.id ? listing.id : null,
       };
+      return set({ editListingOptions: nextOptions });
+    },
+    populateModelOptions: async (brandId) => {
+      const options = get().editListingOptions;
+
+      const nextOptions = { ...options };
 
       if (options.brands.length === 0) {
         const brands = await fetchBrands();
         if (brands) nextOptions.brands = brands;
       }
 
-      if (!options.models.get(listing.brandId)) {
-        const models = await fetchModelsByBrand(listing.brandId);
-        if (models) nextOptions.models.set(listing.brandId, models);
+      if (!options.models.get(brandId)) {
+        const models = await fetchModelsByBrand(brandId);
+        if (models) nextOptions.models.set(brandId, models);
+        console.log("added models:", { brandId, models });
       }
 
       return set({ editListingOptions: nextOptions });

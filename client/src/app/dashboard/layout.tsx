@@ -13,43 +13,35 @@ import { CarListing } from "@/types/listings";
 import Link from "next/link";
 
 async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  console.log("[dashboard layout]");
+
   const filterData = await fetchFilters();
-  const { listings, pagination } = (await fetchCarListings())!;
+  // const { listings, pagination } = (await fetchCarListings())!;
+
+  const brands = (await fetchBrands()) || [];
+
+  // const listingsStoreInitProps: Partial<ListingsStoreState> = {
+  //   listings,
+  // };
 
   const favoritesRes = await getAuthorizedResource<{
     favorites: Array<CarListing["id"]>;
   }>(`${BASE_NEXT_URL}/users/favorites`);
-
-  const brands = (await fetchBrands()) || [];
-
-  const listingsStoreInitProps: Partial<ListingsStoreState> = {
-    listings,
-  };
-
-  if (favoritesRes.success) {
-    console.log({ favorites: favoritesRes.data?.favorites });
-
-    listingsStoreInitProps.favoriteIds = favoritesRes.data!.favorites;
-  }
+  // if (favoritesRes.success) {
+  //   listingsStoreInitProps.favoriteIds = favoritesRes.data!.favorites;
+  // }
 
   // const canViewEditListings = isAuthorizedFor({
   //   action: "view:page",
   //   payload: "/dashboard/edit",
   // });
 
-  console.log({ listingsStoreInitProps });
+  // todo: zustand store should be initialized as didInit flag, fetch all resources on client
 
   return (
     <ProtectedRoute path="/dashboard/*">
       <DashboardProvider initProps={{ filterData, brands }}>
-        <ListingsProvider
-          initProps={{
-            listings,
-            favoriteIds: favoritesRes.data?.favorites || [],
-            pagination,
-            view: 'list'
-          }}
-        >
+        <ListingsProvider>
           <div className="flex min-h-screen w-full gap-8">
             <aside className="w-1/4 rounded-md bg-slate-300 p-4 dark:bg-slate-500">
               <ul className="space-y-4">

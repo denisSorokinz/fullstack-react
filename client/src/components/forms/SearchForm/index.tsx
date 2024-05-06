@@ -78,7 +78,18 @@ const SearchForm: FC<SearchFormProps> = ({
   const handleSubmit = (ev: FormEvent) => {
     ev.preventDefault();
 
-    const sanitized = sanitizeObject(filters);
+    const sanitized = {} as typeof filters;
+    for (let key in sanitizeObject(filters)) {
+      const typedKey = key as keyof typeof filters;
+
+      if (!isNaN(+filters[typedKey]) && +filters[typedKey] > 0) {
+        console.log({ adding: typedKey, value: filters[typedKey] });
+
+        sanitized[typedKey] = +filters[typedKey];
+      }
+    }
+
+    console.log({ sanitized });
 
     onSubmit && onSubmit(sanitized);
   };

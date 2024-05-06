@@ -4,6 +4,9 @@ import { fetchFilters } from "@/lib";
 import { getDefaultFilters } from "@/lib/filters";
 
 async function EditListingsPage() {
+  console.log('[edit listings page]');
+  
+
   const filterData = await fetchFilters();
   const filters = getDefaultFilters(filterData!);
 

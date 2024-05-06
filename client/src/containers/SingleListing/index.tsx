@@ -11,7 +11,7 @@ type Props = {
 };
 
 const SingleListing: FC<Props> = ({ listing }) => {
-  const slides = listing.images.map((img, idx) => ({ img, id: idx }));
+  const slides = listing.images!.map((img, idx) => ({ img, id: idx }));
 
   const openModal = useModalsStore((state) => state.openModal);
   const handleSlideClick = (slideIdx: number) =>
@@ -25,18 +25,23 @@ const SingleListing: FC<Props> = ({ listing }) => {
       <div>
         <Gallery slides={slides} onSlideClick={handleSlideClick} />
       </div>
-      <div className="prose flex flex-col gap-1">
-        <h1 className="mb-2 text-3xl">
+      <div className="prose flex flex-col gap-3">
+        <h1 className="mb-2 text-3xl dark:text-slate-200">
           {listing.brand} {listing.model} ({listing.year})
         </h1>
-        <strong className="block text-xl font-bold text-green-500">
+        <strong className="block text-2xl font-bold text-green-500">
           ${listing.price}
         </strong>
-        <div className="flex items-center gap-1">
-          <Mileage width={16} height={16} fill="#ababab" />
-          <span className="text-sm">{listing.mileage} т. км.</span>
+        <div className="flex items-center gap-2">
+          <Mileage
+            width={16}
+            height={16}
+            fill="#ababab"
+            className="dark:text-slate-200 relative -top-[2px]"
+          />
+          <span className="dark:text-slate-200">{listing.mileage} т. км.</span>
         </div>
-        <p className="mt-1">{listing.description}</p>
+        <p className="mt-1 dark:text-slate-200">{listing.description}</p>
       </div>
     </div>
   );

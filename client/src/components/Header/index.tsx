@@ -2,14 +2,15 @@ import { FC, PropsWithChildren } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Auth from "./Auth";
+import ThemeToggle from "./ThemeToggle";
 
 const Header = () => {
   return (
     <nav className="sticky top-0 z-10 border-gray-200 bg-slate-100 shadow-sm dark:bg-slate-800">
       <div className="mx-auto flex max-w-screen-xl flex-wrap items-center justify-between p-4">
-        <a href="/" className="flex items-center">
+        <Link href="/" className="flex items-center">
           <Image src="/images/logo.svg" width={64} height={32} alt="Logo" />
-        </a>
+        </Link>
         <button
           data-collapse-toggle="navbar-default"
           type="button"
@@ -31,8 +32,8 @@ const Header = () => {
             ></path>
           </svg>
         </button>
-        <div className="hidden w-full md:block md:w-auto" id="navbar-default">
-          <ul className="mt-4 flex flex-col rounded-lg border p-4 font-medium dark:border-gray-700 dark:bg-gray-800 md:mt-0 md:flex-row md:space-x-8 md:border-0 md:p-0 md:dark:bg-gray-900">
+        <div className="hidden md:block md:w-auto" id="navbar-default">
+          <ul className="mt-4 flex flex-col rounded-lg border p-4 font-medium md:mt-0 md:flex-row md:space-x-8 md:border-0 md:p-0">
             <Header.NavItem>
               <Link
                 href="/"
@@ -45,6 +46,7 @@ const Header = () => {
             <Auth />
           </ul>
         </div>
+        <ThemeToggle />
       </div>
     </nav>
   );

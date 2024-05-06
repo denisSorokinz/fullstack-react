@@ -48,7 +48,9 @@ const FormFilters: FC<Props> = ({ filterData, filters, onFilterChange }) => {
               disabled = false;
               options = (
                 <>
-                  <option value="">Оберiть {tFilter.displayName}</option>
+                  <option value="-1">
+                    Оберiть {tFilter.displayName}
+                  </option>
                   {tFilter.options.map((opt) => (
                     <option key={opt.id} value={opt.id}>
                       {opt.name}
@@ -93,10 +95,10 @@ const FormFilters: FC<Props> = ({ filterData, filters, onFilterChange }) => {
           }
         }
 
-        // TODO: handle type checkbox
+        // (?)TODO: handle type checkbox
 
         return (
-          <div key={filter.slug} className="flex flex-col gap-1 min-w-72">
+          <div key={filter.slug} className="flex min-w-72 flex-col gap-1">
             <label htmlFor={filter.slug} className="text-primary">
               {filter.displayName}
             </label>

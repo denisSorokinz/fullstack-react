@@ -1,7 +1,7 @@
 import { FC } from "react";
 import { SVGProps } from ".";
 
-const Helmet: FC<SVGProps> = ({
+const Pen: FC<SVGProps> = ({
   width = "100%",
   height = "100%",
   fill,
@@ -29,4 +29,4 @@ const Helmet: FC<SVGProps> = ({
   </svg>
 );
 
-export default Helmet;
+export default Pen;

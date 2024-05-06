@@ -5,15 +5,17 @@ const Mileage: FC<SVGProps> = ({
   width = "100%",
   height = "100%",
   fill = "#000",
+  stroke,
   className,
 }) => (
   <svg
-    width={width}
-    height={height}
-    className={className}
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 32 32"
-    fill={fill}
+  fill={fill || "currentColor"}
+  stroke={stroke || "currentColor"}
+  width={width}
+  height={height}
+  className={className}
+  viewBox="0 0 32 32"
+  xmlns="http://www.w3.org/2000/svg"
   >
     <path
       xmlns="http://www.w3.org/2000/svg"

@@ -49,7 +49,7 @@ export type AuthResponse =
   | { success: true; tokens: { accessToken: string; refreshToken: string } }
   | { success: false; message?: string; error?: ZodError };
 
-type UserRole = "USER" | "ADMIN";
+export type UserRole = "USER" | "ADMIN";
 
 export type AuthJWTPayload = {
   id: number;
