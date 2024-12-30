@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon",
-    "seed": "ts-node prisma/seed.ts",
+    "seed": "tsx prisma/seed.ts",
     "migrate:reset": "prisma migrate reset && prisma migrate dev && pnpm seed && prisma generate"
   },
   "keywords": [],
@@ -40,6 +40,7 @@
     "nodemon": "^3.0.1",
     "prisma": "^5.11.0",
     "ts-node": "^10.9.1",
+    "tsx": "^4.19.2",
     "typescript": "^5.1.6"
   }
 }
